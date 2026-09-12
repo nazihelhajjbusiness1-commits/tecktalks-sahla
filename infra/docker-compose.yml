@@ -49,17 +49,22 @@ services:
     profiles: ['full']
 
   # React + Vite frontend.
+  #
+  # Vite bakes VITE_* vars into the static bundle at build time, so they're
+  # passed as build args (not `environment:`, which only affects the running
+  # container and has no effect on already-built static files). Rebuild the
+  # image after changing VITE_API_URL or VITE_USE_MOCKS in .env.
   frontend:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
     container_name: sahla-frontend
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
-      VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
     ports:
       - '${FRONTEND_PORT:-5173}:80'
     profiles: ['full']

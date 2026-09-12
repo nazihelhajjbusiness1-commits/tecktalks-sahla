@@ -1,0 +1,69 @@
+# Sahla — local development stack.
+#
+# Reads configuration from the repository-root .env file (copy .env.example
+# to .env first). Postgres runs today; the backend and frontend services are
+# scaffolded and become runnable once their Dockerfiles are added.
+#
+#   docker compose --env-file ../.env -f docker-compose.yml up db      # DB only
+#   docker compose --env-file ../.env -f docker-compose.yml up          # full stack
+#
+# (Run from the infra/ directory, or add `-f infra/docker-compose.yml` from root.)
+
+name: sahla
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sahla-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sahla}
+      POSTGRES_USER: ${POSTGRES_USER:-sahla}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sahla}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sahla} -d ${POSTGRES_DB:-sahla}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot REST API. Add backend/Dockerfile to enable this service.
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: sahla-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-sahla}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-sahla}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-sahla}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+    ports:
+      - '${SERVER_PORT:-8080}:8080'
+    profiles: ['full']
+
+  # React + Vite frontend. Add frontend/Dockerfile to enable this service.
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: sahla-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+      VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
+    ports:
+      - '${FRONTEND_PORT:-5173}:80'
+    profiles: ['full']
+
+volumes:
+  db-data:

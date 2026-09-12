@@ -14,7 +14,7 @@ export function LoginPage() {
     (location.state as { from?: Location } | null)?.from?.pathname ??
     '/dashboard'
 
-  const [identifier, setIdentifier] = useState('rania.aoun@mawsim.app')
+  const [identifier, setIdentifier] = useState('rania.aoun@sahla.app')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)

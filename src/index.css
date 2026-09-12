@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /*
-  Mawsim design tokens — restrained agricultural identity.
+  Sahla design tokens — restrained agricultural identity.
   Deep olive/forest green primary, warm cream surfaces, earthy accents.
   Colors are exposed as Tailwind theme variables so components use
   semantic utilities (bg-primary, text-muted-foreground, ...) rather

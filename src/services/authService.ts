@@ -2,7 +2,7 @@ import type { AuthSession, Credentials, User } from '@/types'
 import { currentUser } from './mockData'
 import { USE_MOCKS, mockDelay, request, setToken } from './api'
 
-const SESSION_KEY = 'mawsim.user'
+const SESSION_KEY = 'sahla.user'
 
 /**
  * Development / mock authentication.

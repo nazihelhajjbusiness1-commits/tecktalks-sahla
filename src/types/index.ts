@@ -1,5 +1,5 @@
 /**
- * Domain types for Mawsim.
+ * Domain types for Sahla.
  * These mirror the shapes we expect the Spring Boot REST API to return,
  * so services can swap mock data for real HTTP responses without changing
  * component code.

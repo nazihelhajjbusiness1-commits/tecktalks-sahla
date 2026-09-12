@@ -1,6 +1,6 @@
-# Mawsim — Agricultural Cooperative Management
+# Sahla — Agricultural Cooperative Management
 
-> _Mawsim_ (موسم, "harvest season") is a web platform for agricultural
+> _Sahla_ (سهلة, "simple / easy") is a web platform for agricultural
 > cooperatives, produce collection centers, and agricultural organizations in
 > Lebanon. It manages the full operational workflow from a farmer's delivery
 > all the way through to their payment.

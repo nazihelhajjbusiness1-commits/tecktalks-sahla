@@ -14,7 +14,7 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? '/api'
 export const USE_MOCKS =
   (import.meta.env.VITE_USE_MOCKS ?? 'true') !== 'false'
 
-const TOKEN_KEY = 'mawsim.token'
+const TOKEN_KEY = 'sahla.token'
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)

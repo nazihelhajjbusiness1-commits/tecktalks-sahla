@@ -34,5 +34,5 @@ export const navItems: NavItem[] = [
 export function pageTitleForPath(pathname: string): string {
   if (pathname.startsWith('/farmers/')) return 'Farmer Details'
   const match = navItems.find((item) => pathname.startsWith(item.to))
-  return match?.label ?? 'Mawsim'
+  return match?.label ?? 'Sahla'
 }

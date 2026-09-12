@@ -16,7 +16,7 @@ import type {
 export const currentUser: User = {
   id: 'u-001',
   name: 'Rania Aoun',
-  email: 'rania.aoun@mawsim.app',
+  email: 'rania.aoun@sahla.app',
   role: 'manager',
   cooperative: 'Bekaa Valley Cooperative',
 }

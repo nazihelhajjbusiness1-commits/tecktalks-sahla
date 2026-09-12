@@ -1,0 +1,176 @@
+@import 'tailwindcss';
+
+/*
+  Mawsim design tokens — restrained agricultural identity.
+  Deep olive/forest green primary, warm cream surfaces, earthy accents.
+  Colors are exposed as Tailwind theme variables so components use
+  semantic utilities (bg-primary, text-muted-foreground, ...) rather
+  than raw hex. Layout uses logical properties where practical so an
+  Arabic / RTL layer can be added later without rework.
+*/
+@theme {
+  /* Brand — deep olive / forest green */
+  --color-primary: #2f4a2f;
+  --color-primary-hover: #263c26;
+  --color-primary-soft: #eef1ea;
+  --color-on-primary: #ffffff;
+
+  /* Secondary — muted sage */
+  --color-secondary: #5b7052;
+  --color-on-secondary: #ffffff;
+
+  /* Accent — harvest gold / wheat */
+  --color-accent: #b45309;
+  --color-accent-soft: #fbeede;
+  --color-on-accent: #ffffff;
+
+  /* Surfaces — warm cream + white cards */
+  --color-background: #faf8f3;
+  --color-foreground: #23291f;
+  --color-card: #ffffff;
+  --color-card-foreground: #23291f;
+
+  /* Neutrals */
+  --color-muted: #f1efe8;
+  --color-muted-foreground: #6b7280;
+  --color-border: #e6e2d8;
+  --color-input: #d9d5c9;
+  --color-ring: #2f4a2f;
+
+  /* Earthy accent — muted brown / sand (decorative) */
+  --color-earth: #8a6d3b;
+  --color-sand: #e8e0cf;
+
+  /* Status */
+  --color-success: #3f7d3f;
+  --color-success-soft: #e7f0e4;
+  --color-warning: #b45309;
+  --color-warning-soft: #fbeede;
+  --color-info: #3f6b7d;
+  --color-info-soft: #e5eef1;
+  --color-danger: #b3261e;
+  --color-danger-soft: #f9e3e1;
+  --color-neutral-status: #6b7280;
+  --color-neutral-status-soft: #f0efe9;
+
+  /* Typography */
+  --font-heading: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+
+  /* Radii — grounded, not oversized */
+  --radius-sm: 0.25rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+
+  /* Shadows — subtle */
+  --shadow-card: 0 1px 2px 0 rgb(35 41 31 / 0.04), 0 1px 3px 0 rgb(35 41 31 / 0.06);
+  --shadow-raised: 0 4px 12px -2px rgb(35 41 31 / 0.1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Visible, consistent focus for keyboard users */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Honor reduced-motion preference globally */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Subtle, purposeful motion for overlays only. */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Drawer slide honoring writing direction (LTR: from left, RTL: from right). */
+@keyframes slideInStart {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+:dir(rtl) .motion-safe\:animate-\[slideInStart_200ms_ease-out\] {
+  animation-name: slideInStartRtl;
+}
+
+@keyframes slideInStartRtl {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Thin, unobtrusive scrollbars that match the earthy surface */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 9999px;
+  }
+}

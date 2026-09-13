@@ -3,11 +3,14 @@ package com.farmmanagement.backend.auth;
 import com.farmmanagement.backend.auth.dto.AuthResponse;
 import com.farmmanagement.backend.auth.dto.LoginRequest;
 import com.farmmanagement.backend.auth.dto.RegisterRequest;
+import com.farmmanagement.backend.common.response.ApiResponse;
 import com.farmmanagement.backend.users.User;
 import com.farmmanagement.backend.users.dto.UserResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,7 +24,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(
+    public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody RegisterRequest request
     ) {
         User user = authService.register(request);
@@ -33,20 +36,59 @@ public class AuthController {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhoneNumber(),
+                user.getRole(),
                 user.getCreatedAt()
         );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .body(
+                        ApiResponse.success(
+                                "User registered successfully",
+                                response
+                        )
+                );
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request
     ) {
         AuthResponse response = authService.login(request);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Login successful",
+                        response
+                )
+        );
+    }
+
+    @GetMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(
+            Authentication authentication
+    ) {
+        User user = authService.getCurrentUser(
+                authentication.getName()
+        );
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getFirstname(),
+                user.getLastname(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getRole(),
+                user.getCreatedAt()
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Current user retrieved successfully",
+                        response
+                )
+        );
     }
 }

@@ -1,8 +1,10 @@
+
 package com.farmmanagement.backend.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -12,13 +14,19 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String secret =
-            "your-super-secret-key-must-be-at-least-32-characters-long";
+    private final SecretKey key;
+    private final long expiration;
 
-    private final SecretKey key =
-            Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    public JwtService(
+            @Value("${JWT_SECRET}") String secret,
+            @Value("${JWT_EXPIRATION}") long expiration
+    ) {
+        this.key = Keys.hmacShaKeyFor(
+                secret.getBytes(StandardCharsets.UTF_8)
+        );
 
-    private final long expiration = 1000 * 60 * 60; // 1 hour
+        this.expiration = expiration;
+    }
 
     public String generateToken(String email, Role role) {
 

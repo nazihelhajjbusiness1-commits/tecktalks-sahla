@@ -1,13 +1,16 @@
 package com.farmmanagement.backend.auth;
 
+import com.farmmanagement.backend.auth.dto.AuthResponse;
 import com.farmmanagement.backend.auth.dto.LoginRequest;
 import com.farmmanagement.backend.auth.dto.RegisterRequest;
-import com.farmmanagement.backend.auth.dto.AuthResponse;
+import com.farmmanagement.backend.common.exception.AuthenticationException;
+import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.users.User;
 import com.farmmanagement.backend.users.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.farmmanagement.backend.auth.Role;
+import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
+
 
 import java.time.LocalDateTime;
 
@@ -31,11 +34,11 @@ public class AuthService {
     public User register(RegisterRequest request) {
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         User user = new User();
@@ -49,9 +52,9 @@ public class AuthService {
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
+
         user.setRole(Role.WAREHOUSE_EMPLOYEE);
         user.setCreatedAt(LocalDateTime.now());
-
 
         return userRepository.save(user);
     }
@@ -61,7 +64,7 @@ public class AuthService {
         User user = userRepository
                 .findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password")
+                        new AuthenticationException("Invalid email or password")
                 );
 
         boolean passwordMatches = passwordEncoder.matches(
@@ -70,7 +73,7 @@ public class AuthService {
         );
 
         if (!passwordMatches) {
-            throw new RuntimeException("Invalid email or password");
+            throw new AuthenticationException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(
@@ -80,4 +83,14 @@ public class AuthService {
 
         return new AuthResponse(token);
     }
+
+    public User getCurrentUser(String email) {
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+    }
+
+
 }

@@ -1,11 +1,10 @@
 # Sahla — local development stack.
 #
 # Reads configuration from the repository-root .env file (copy .env.example
-# to .env first). Postgres runs today; the backend and frontend services are
-# scaffolded and become runnable once their Dockerfiles are added.
+# to .env first).
 #
-#   docker compose --env-file ../.env -f docker-compose.yml up db      # DB only
-#   docker compose --env-file ../.env -f docker-compose.yml up          # full stack
+#   docker compose --env-file ../.env -f docker-compose.yml up db              # DB only
+#   docker compose --env-file ../.env -f docker-compose.yml --profile full up  # full stack
 #
 # (Run from the infra/ directory, or add `-f infra/docker-compose.yml` from root.)
 
@@ -30,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Spring Boot REST API. Add backend/Dockerfile to enable this service.
+  # Spring Boot REST API.
   backend:
     build:
       context: ../backend
@@ -49,18 +48,23 @@ services:
       - '${SERVER_PORT:-8080}:8080'
     profiles: ['full']
 
-  # React + Vite frontend. Add frontend/Dockerfile to enable this service.
+  # React + Vite frontend.
+  #
+  # Vite bakes VITE_* vars into the static bundle at build time, so they're
+  # passed as build args (not `environment:`, which only affects the running
+  # container and has no effect on already-built static files). Rebuild the
+  # image after changing VITE_API_URL or VITE_USE_MOCKS in .env.
   frontend:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
     container_name: sahla-frontend
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
-      VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
     ports:
       - '${FRONTEND_PORT:-5173}:80'
     profiles: ['full']

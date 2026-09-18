@@ -7,6 +7,7 @@ import com.farmmanagement.backend.common.response.ApiResponse;
 import com.farmmanagement.backend.users.User;
 import com.farmmanagement.backend.users.dto.UserResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @SecurityRequirements
     public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody RegisterRequest request
     ) {
@@ -51,6 +53,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @SecurityRequirements
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request
     ) {

@@ -29,4 +29,4 @@ CREATE TABLE price_rules (
     CONSTRAINT fk_price_rule_grade FOREIGN KEY (grade_id) REFERENCES grade_definitions(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_price_rule_product_grade ON price_rules(product_id, grade_id);
+CREATE INDEX idx_price_rule_lookup ON price_rules(product_id, grade_id, effective_from);

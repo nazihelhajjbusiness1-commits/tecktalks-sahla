@@ -23,7 +23,7 @@ public interface PriceRuleRepository extends JpaRepository<PriceRule, Long> {
           AND p.active = true
           AND (:excludeId IS NULL OR p.id <> :excludeId)
           AND (
-               :effectiveTo IS NULL OR p.effectiveFrom < :effectiveTo
+               cast(:effectiveTo as java.time.OffsetDateTime) IS NULL OR p.effectiveFrom < :effectiveTo
               )
           AND (
                p.effectiveTo IS NULL OR p.effectiveTo > :effectiveFrom

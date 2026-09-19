@@ -1,0 +1,2 @@
+JWT_SECRET: test-only-jwt-secret-do-not-use-in-production-please-32chars
+JWT_EXPIRATION: 3600000

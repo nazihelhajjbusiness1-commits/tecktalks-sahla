@@ -39,6 +39,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), request);
     }
 
+    // ---- 400: business rule violations (e.g. invalid/overlapping price periods) ----
+
+    @ExceptionHandler(InvalidPricingException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPricing(
+            InvalidPricingException exception,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.BAD_REQUEST, "Validation Error", exception.getMessage(), request);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
             DataIntegrityViolationException exception,

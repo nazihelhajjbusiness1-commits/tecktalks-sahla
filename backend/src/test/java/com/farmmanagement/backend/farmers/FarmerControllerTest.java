@@ -183,6 +183,23 @@ class FarmerControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void getFarmer_withKnownId_returnsFarmer() throws Exception {
+        Long farmerId = createFarmer("Ahmad Farms", "70123456", "Aley");
+
+        mockMvc.perform(get(BASE_URL + "/" + farmerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(farmerId))
+                .andExpect(jsonPath("$.name").value("Ahmad Farms"))
+                .andExpect(jsonPath("$.farmerCode").isNotEmpty());
+    }
+
+    // Note: there is no "reject duplicate farmer code" test here on purpose.
+    // farmerCode is generated server-side (FarmerService.generateFarmerCode,
+    // UUID-based) and isn't accepted on CreateFarmerRequest, so there's no
+    // user-triggerable way to submit a duplicate one through the API.
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void getFarmers_withSearch_returnsMatchingFarmer() throws Exception {
         createFarmer("Searchable Farm", "70123456", "Aley");
 

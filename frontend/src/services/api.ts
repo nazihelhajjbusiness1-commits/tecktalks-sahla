@@ -50,7 +50,14 @@ export async function request<T>(
   })
 
   if (!res.ok) {
-    const message = await res.text().catch(() => res.statusText)
+    const text = await res.text().catch(() => '')
+    let message = text || res.statusText
+    try {
+      const body = JSON.parse(text) as { message?: string }
+      if (body.message) message = body.message
+    } catch {
+      // Body wasn't JSON (or had no `message` field) - fall back to raw text.
+    }
     throw new ApiError(res.status, message || 'Request failed')
   }
 

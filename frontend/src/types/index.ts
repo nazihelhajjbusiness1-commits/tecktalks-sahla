@@ -43,33 +43,130 @@ export interface AuthSession {
 
 export type ProductGrade = 'A' | 'B' | 'C' | 'Ungraded'
 
+/** Sellable units supported by the backend product catalog. */
+export type ProductUnit = 'KG' | 'TON' | 'BOX' | 'CRATE'
+
+/** Mirrors the backend ProductResponse DTO. */
 export interface Product {
-  id: string
+  id: number
   name: string
-  /** e.g. "kg" — kept flexible for future crates/boxes. */
-  unit: string
-  /** Optional produce category for grouping. */
-  category?: string
+  variety: string
+  unit: ProductUnit
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateProductRequest {
+  name: string
+  variety: string
+  unit: ProductUnit
+}
+
+export interface UpdateProductRequest {
+  name: string
+  variety: string
+  unit: ProductUnit
+  active: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* Grade definitions (per product)                                     */
+/* ------------------------------------------------------------------ */
+
+/** Mirrors the backend GradeDefinitionResponse DTO. */
+export interface GradeDefinition {
+  id: number
+  productId: number
+  gradeCode: string
+  name: string
+  description?: string
+  displayOrder: number
+  active: boolean
+}
+
+export interface CreateGradeRequest {
+  gradeCode: string
+  name: string
+  description?: string
+  displayOrder: number
+  active?: boolean
+}
+
+export interface UpdateGradeRequest {
+  name: string
+  description?: string
+  displayOrder: number
+  active: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* Grade-based pricing                                                  */
+/* ------------------------------------------------------------------ */
+
+export type Currency = 'USD' | 'LBP'
+
+/** Mirrors the backend PriceRuleResponse DTO. */
+export interface PriceRule {
+  id: number
+  productId: number
+  gradeId: number
+  /** Monetary amount (BigDecimal on the backend). */
+  amount: number
+  currency: Currency
+  effectiveFrom: string // ISO date-time
+  effectiveTo: string | null // ISO date-time, open-ended when null
+  active: boolean
+}
+
+export interface CreatePriceRequest {
+  gradeId: number
+  amount: number
+  currency: Currency
+  effectiveFrom: string
+  effectiveTo?: string | null
+  active?: boolean
+}
+
+export interface UpdatePriceRequest {
+  amount: number
+  currency: Currency
+  effectiveFrom: string
+  effectiveTo?: string | null
+  active: boolean
 }
 
 /* ------------------------------------------------------------------ */
 /* Farmers                                                             */
 /* ------------------------------------------------------------------ */
 
-export type FarmerStatus = 'active' | 'inactive'
+export type FarmerStatus = 'ACTIVE' | 'INACTIVE'
 
+/** Mirrors the backend FarmerResponse DTO. */
 export interface Farmer {
-  id: string
+  id: number
+  farmerCode: string
   name: string
-  village: string
-  region: string
   phone: string
-  mainCrop: string
-  totalDeliveries: number
-  /** Outstanding balance owed to the farmer, in USD. */
-  balance: number
+  village: string
   status: FarmerStatus
-  joinedAt: string // ISO date
+  createdAt: string // ISO date-time
+  updatedAt: string // ISO date-time
+}
+
+export interface CreateFarmerRequest {
+  /** Optional — the backend auto-generates a readable code when omitted. */
+  farmerCode?: string
+  name: string
+  phone: string
+  village: string
+}
+
+export interface UpdateFarmerRequest {
+  name: string
+  phone: string
+  village: string
+  status?: FarmerStatus
 }
 
 /* ------------------------------------------------------------------ */
@@ -164,4 +261,21 @@ export interface Paginated<T> {
   total: number
   page: number
   pageSize: number
+}
+
+/** Mirrors Spring Data's Page<T> JSON shape returned by list endpoints. */
+export interface PagedResponse<T> {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  /** Zero-based current page index. */
+  number: number
+  size: number
+}
+
+/** Common query params for paginated + searchable list endpoints. */
+export interface ListParams {
+  search?: string
+  page?: number
+  size?: number
 }

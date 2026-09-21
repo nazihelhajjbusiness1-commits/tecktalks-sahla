@@ -39,6 +39,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), request);
     }
 
+    // ---- 400: business/domain validation (e.g. pricing rules, grade ownership) ----
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            ValidationException exception,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.BAD_REQUEST, "Validation Error", exception.getMessage(), request);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
             DataIntegrityViolationException exception,

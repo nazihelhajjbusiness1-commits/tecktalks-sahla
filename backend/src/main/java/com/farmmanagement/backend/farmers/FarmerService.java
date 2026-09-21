@@ -1,5 +1,6 @@
 package com.farmmanagement.backend.farmers;
 
+import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
 import com.farmmanagement.backend.farmers.dto.CreateFarmerRequest;
 import com.farmmanagement.backend.farmers.dto.FarmerResponse;
@@ -7,8 +8,6 @@ import com.farmmanagement.backend.farmers.dto.UpdateFarmerRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 public class FarmerService {
@@ -23,7 +22,7 @@ public class FarmerService {
 
         Farmer farmer = new Farmer();
 
-        farmer.setFarmerCode(generateFarmerCode());
+        farmer.setFarmerCode(resolveFarmerCode(request.getFarmerCode()));
         farmer.setName(request.getName());
         farmer.setPhone(request.getPhone());
         farmer.setVillage(request.getVillage());
@@ -89,12 +88,30 @@ public class FarmerService {
         return farmers.map(FarmerResponse::new);
     }
 
+    /**
+     * Uses the client-supplied code when present (rejecting duplicates), otherwise
+     * generates a readable sequential code suitable for receipts and searching.
+     */
+    private String resolveFarmerCode(String requestedCode) {
+
+        if (requestedCode != null && !requestedCode.isBlank()) {
+            String code = requestedCode.trim();
+            if (farmerRepository.existsByFarmerCode(code)) {
+                throw new ConflictException("Farmer code '" + code + "' already exists");
+            }
+            return code;
+        }
+
+        return generateFarmerCode();
+    }
+
     private String generateFarmerCode() {
 
+        long next = farmerRepository.count() + 1;
         String farmerCode;
 
         do {
-            farmerCode = "F-" + UUID.randomUUID();
+            farmerCode = String.format("F-%05d", next++);
         } while (farmerRepository.existsByFarmerCode(farmerCode));
 
         return farmerCode;

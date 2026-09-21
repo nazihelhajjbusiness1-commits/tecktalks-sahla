@@ -15,6 +15,7 @@ export {
   PaymentStatusBadge,
   InventoryStatusBadge,
   FarmerStatusBadge,
+  ActiveBadge,
   GradeBadge,
 } from './StatusBadge'
 export { Modal } from './Modal'

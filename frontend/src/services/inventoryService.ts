@@ -1,10 +1,10 @@
 import type { InventoryItem } from '@/types'
-import { USE_MOCKS, mockDelay, request } from './api'
+import { mockDelay } from './api'
 import { inventory } from './mockData'
 
+// Inventory has no backend endpoint yet (future sprint) — always mock data.
 export const inventoryService = {
   async list(): Promise<InventoryItem[]> {
-    if (USE_MOCKS) return mockDelay(inventory)
-    return request<InventoryItem[]>('/inventory')
+    return mockDelay(inventory)
   },
 }

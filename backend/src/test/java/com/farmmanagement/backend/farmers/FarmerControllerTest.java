@@ -169,6 +169,42 @@ class FarmerControllerTest {
                 .andExpect(jsonPath("$.error").value("Forbidden"));
     }
 
+    // ---- create: duplicate farmer code ----
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createFarmer_withDuplicateFarmerCode_returns409() throws Exception {
+        String body = """
+                {
+                  "farmerCode": "F-DUP-1",
+                  "name": "First Farm",
+                  "phone": "70123456",
+                  "village": "Aley"
+                }
+                """;
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.farmerCode").value("F-DUP-1"));
+
+        // Same code again -> conflict, same error shape as other endpoints.
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "farmerCode": "F-DUP-1",
+                                  "name": "Second Farm",
+                                  "phone": "70123457",
+                                  "village": "Aley"
+                                }
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"));
+    }
+
     // ---- get ----
 
     @Test

@@ -15,19 +15,24 @@ public interface PriceRuleRepository extends JpaRepository<PriceRule, Long> {
 
     List<PriceRule> findByProductId(Long productId);
 
+    /**
+     * Finds active price rules whose effective period overlaps [effectiveFrom, effectiveTo)
+     * for the same product/grade/currency.
+     *
+     * Callers must pass non-null values for every parameter: use a sentinel id
+     * (e.g. -1) when there is no rule to exclude, and a far-future timestamp when
+     * the new rule has no end date. This avoids binding untyped NULL parameters,
+     * which PostgreSQL rejects ("could not determine data type of parameter").
+     */
     @Query("""
         SELECT p FROM PriceRule p
         WHERE p.productId = :productId
           AND p.gradeId = :gradeId
           AND p.currency = :currency
           AND p.active = true
-          AND (:excludeId IS NULL OR p.id <> :excludeId)
-          AND (
-               :effectiveTo IS NULL OR p.effectiveFrom < :effectiveTo
-              )
-          AND (
-               p.effectiveTo IS NULL OR p.effectiveTo > :effectiveFrom
-              )
+          AND p.id <> :excludeId
+          AND p.effectiveFrom < :effectiveTo
+          AND (p.effectiveTo IS NULL OR p.effectiveTo > :effectiveFrom)
     """)
     List<PriceRule> findOverlappingActiveRules(
         @Param("productId") Long productId,

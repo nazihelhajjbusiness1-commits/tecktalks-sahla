@@ -3,11 +3,11 @@ package com.farmmanagement.backend.service;
 import com.farmmanagement.backend.dto.GradeDefinitionRequest;
 import com.farmmanagement.backend.dto.GradeDefinitionResponse;
 import com.farmmanagement.backend.dto.GradeDefinitionUpdateRequest;
-import com.farmmanagement.backend.exception.DuplicateResourceException;
-import com.farmmanagement.backend.exception.ResourceNotFoundException;
+import com.farmmanagement.backend.common.exception.ConflictException;
+import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
 import com.farmmanagement.backend.model.GradeDefinition;
 import com.farmmanagement.backend.repository.GradeDefinitionRepository;
-import com.farmmanagement.backend.repository.ProductRepository;
+import com.farmmanagement.backend.products.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ public class GradeDefinitionService {
         verifyProductExists(productId);
 
         if (gradeDefinitionRepository.existsByProductIdAndGradeCode(productId, request.getGradeCode())) {
-            throw new DuplicateResourceException(
+            throw new ConflictException(
                 "Grade code '" + request.getGradeCode() + "' already exists for product ID: " + productId
             );
         }

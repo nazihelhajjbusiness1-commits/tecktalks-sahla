@@ -1,0 +1,13 @@
+# Test configuration.
+#
+# The database connection is supplied automatically by Testcontainers
+# (@ServiceConnection in TestcontainersConfiguration), so no DB_* values are
+# needed here. These JWT values exist only so the application context can start
+# during tests - they are not real secrets.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+JWT_SECRET: test-secret-key-must-be-at-least-32-characters-long-000
+JWT_EXPIRATION: 3600000

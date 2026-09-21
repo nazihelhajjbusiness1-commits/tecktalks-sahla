@@ -1,16 +1,14 @@
 import type { Delivery } from '@/types'
-import { USE_MOCKS, mockDelay, request } from './api'
+import { mockDelay } from './api'
 import { deliveries } from './mockData'
 
+// Deliveries have no backend endpoint yet (future sprint) — always mock data.
 export const deliveryService = {
   async list(): Promise<Delivery[]> {
-    if (USE_MOCKS) return mockDelay(deliveries)
-    return request<Delivery[]>('/deliveries')
+    return mockDelay(deliveries)
   },
 
   async listByFarmer(farmerId: string): Promise<Delivery[]> {
-    if (USE_MOCKS)
-      return mockDelay(deliveries.filter((d) => d.farmerId === farmerId))
-    return request<Delivery[]>(`/deliveries?farmerId=${farmerId}`)
+    return mockDelay(deliveries.filter((d) => d.farmerId === farmerId))
   },
 }

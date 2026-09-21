@@ -4,7 +4,7 @@ import type {
   InventorySummaryRow,
   PaymentsBreakdown,
 } from '@/types'
-import { USE_MOCKS, mockDelay, request } from './api'
+import { mockDelay } from './api'
 import { deliveries, farmers, inventory, payments } from './mockData'
 
 /** "Today" for the mock dataset (matches the seeded delivery dates). */
@@ -15,7 +15,7 @@ function computeStats(): DashboardStats {
   return {
     todaysDeliveries: todays.length,
     produceReceivedKg: todays.reduce((sum, d) => sum + d.netWeight, 0),
-    activeFarmers: farmers.filter((f) => f.status === 'active').length,
+    activeFarmers: farmers.filter((f) => f.status === 'ACTIVE').length,
     paymentsDueUsd: payments.reduce((sum, p) => sum + p.remaining, 0),
     inventoryKg: inventory.reduce((sum, i) => sum + i.quantity, 0),
   }
@@ -47,18 +47,18 @@ export interface DashboardData {
   paymentsBreakdown: PaymentsBreakdown
 }
 
+// The dashboard has no backend endpoint yet (future sprint), so it always
+// serves mock data regardless of VITE_USE_MOCKS. Only the Sprint 2 modules
+// (farmers, products, grades, pricing, auth) talk to the real backend.
 export const dashboardService = {
   async load(): Promise<DashboardData> {
-    if (USE_MOCKS) {
-      return mockDelay({
-        stats: computeStats(),
-        recentDeliveries: [...deliveries]
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .slice(0, 6),
-        inventorySummary: computeInventorySummary(),
-        paymentsBreakdown: computePaymentsBreakdown(),
-      })
-    }
-    return request<DashboardData>('/dashboard')
+    return mockDelay({
+      stats: computeStats(),
+      recentDeliveries: [...deliveries]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 6),
+      inventorySummary: computeInventorySummary(),
+      paymentsBreakdown: computePaymentsBreakdown(),
+    })
   },
 }

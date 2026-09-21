@@ -42,7 +42,7 @@ Each part has its own README:
 | Part | Status |
 |------|--------|
 | Frontend | **Week 1 foundation complete** — all primary screens on mock data |
-| Backend | Not started (placeholder) |
+| Backend | **Sprint 2 complete** — farmers, products, grades and grade-based (USD/LBP) pricing, with global error handling and role-based security. 43 integration tests green against a real PostgreSQL container. |
 | Infra | PostgreSQL runnable via Docker; backend/frontend services scaffolded |
 
 The frontend runs entirely on **mock data** today and is architected so that
@@ -81,6 +81,39 @@ docker compose --env-file ../.env up db
 The `backend` and `frontend` Docker services are defined in
 [`infra/docker-compose.yml`](infra/docker-compose.yml) and become runnable once
 their Dockerfiles are added.
+
+### 4. Backend (Spring Boot API)
+
+Requires **JDK 21** (set `JAVA_HOME`) and a PostgreSQL database. Copy the
+backend env template and fill in the values:
+
+```bash
+cd backend
+cp .env.example .env    # set DB_* and a JWT_SECRET of at least 32 chars
+./mvnw spring-boot:run  # starts on http://localhost:8080 (Swagger at /swagger-ui.html)
+```
+
+Flyway applies the schema (`V1`–`V6`), dev seed data (`V7`) and demo login
+accounts (`V8`) automatically on startup, so a fresh, empty database is ready to
+use with no manual SQL.
+
+**Seeded demo accounts** (all with password `Password123`):
+
+| Email | Role | Notes |
+|-------|------|-------|
+| `admin@sahla.lb` | ADMIN | Full access |
+| `manager@sahla.lb` | MANAGER | Sprint Review demo account |
+| `receiving@sahla.lb` | RECEIVING_EMPLOYEE | Can create/search farmers |
+| `inspector@sahla.lb` | INSPECTOR | Read-only (for permission testing) |
+
+**Running the test suite** (integration tests use Testcontainers, so
+**Docker must be running** — no local DB setup needed; each run spins up its own
+PostgreSQL and cleans up after itself):
+
+```bash
+cd backend
+./mvnw test             # 43 integration tests across farmers, products, grades, pricing + security
+```
 
 ---
 

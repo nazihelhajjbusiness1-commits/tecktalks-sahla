@@ -11,6 +11,8 @@ import { InventoryPage } from '@/pages/inventory/InventoryPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { ProductsSettingsPage } from '@/pages/settings/ProductsSettingsPage'
+import { ProductSettingsDetailPage } from '@/pages/settings/ProductSettingsDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
@@ -31,6 +33,11 @@ function App() {
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/products" element={<ProductsSettingsPage />} />
+              <Route
+                path="/settings/products/:id"
+                element={<ProductSettingsDetailPage />}
+              />
             </Route>
           </Route>
 

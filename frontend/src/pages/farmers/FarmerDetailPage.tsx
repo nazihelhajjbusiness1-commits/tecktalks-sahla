@@ -1,40 +1,38 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
   Phone,
   MapPin,
-  Sprout,
-  Wallet,
+  Hash,
+  CalendarDays,
+  Pencil,
   Truck,
+  Wallet,
 } from 'lucide-react'
 import {
   Card,
   CardHeader,
   Button,
-  Table,
   LoadingSpinner,
   EmptyState,
   FarmerStatusBadge,
-  DeliveryStatusBadge,
-  GradeBadge,
-  type Column,
 } from '@/components/common'
 import { useAsync } from '@/hooks/useAsync'
 import { farmerService } from '@/services/farmerService'
-import { deliveryService } from '@/services/deliveryService'
-import { formatCurrency, formatDate, formatWeight } from '@/utils/format'
-import type { Delivery } from '@/types'
+import { formatDate, initials } from '@/utils/format'
+import { FarmerFormModal } from './FarmerFormModal'
 
 export function FarmerDetailPage() {
   const { id = '' } = useParams()
+  const farmerId = Number(id)
   const navigate = useNavigate()
+  const [editOpen, setEditOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
   const { data: farmer, loading } = useAsync(
-    () => farmerService.getById(id),
-    [id],
-  )
-  const { data: deliveries } = useAsync(
-    () => deliveryService.listByFarmer(id),
-    [id],
+    () => farmerService.getById(farmerId),
+    [farmerId, refreshKey],
   )
 
   if (loading) {
@@ -51,7 +49,11 @@ export function FarmerDetailPage() {
         title="Farmer not found"
         description="This farmer may have been removed or the link is incorrect."
         action={
-          <Button variant="outline" icon={ArrowLeft} onClick={() => navigate('/farmers')}>
+          <Button
+            variant="outline"
+            icon={ArrowLeft}
+            onClick={() => navigate('/farmers')}
+          >
             Back to Farmers
           </Button>
         }
@@ -59,21 +61,11 @@ export function FarmerDetailPage() {
     )
   }
 
-  const deliveryColumns: Column<Delivery>[] = [
-    { header: 'Delivery', cell: (d) => <span className="font-mono text-xs">{d.id}</span> },
-    { header: 'Product', cell: (d) => d.product },
-    { header: 'Weight', align: 'end', cell: (d) => formatWeight(d.netWeight) },
-    { header: 'Grade', align: 'center', cell: (d) => <GradeBadge grade={d.grade} /> },
-    { header: 'Date', className: 'hidden sm:table-cell', cell: (d) => formatDate(d.date) },
-    { header: 'Status', cell: (d) => <DeliveryStatusBadge status={d.status} /> },
-  ]
-
   const facts = [
-    { icon: MapPin, label: 'Location', value: `${farmer.village}, ${farmer.region}` },
+    { icon: Hash, label: 'Farmer code', value: farmer.farmerCode },
     { icon: Phone, label: 'Phone', value: farmer.phone },
-    { icon: Sprout, label: 'Main crop', value: farmer.mainCrop },
-    { icon: Truck, label: 'Total deliveries', value: String(farmer.totalDeliveries) },
-    { icon: Wallet, label: 'Outstanding balance', value: formatCurrency(farmer.balance) },
+    { icon: MapPin, label: 'Village', value: farmer.village },
+    { icon: CalendarDays, label: 'Registered', value: formatDate(farmer.createdAt) },
   ]
 
   return (
@@ -89,11 +81,7 @@ export function FarmerDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-lg font-semibold text-primary">
-            {farmer.name
-              .split(' ')
-              .slice(0, 2)
-              .map((n) => n[0])
-              .join('')}
+            {initials(farmer.name)}
           </span>
           <div>
             <div className="flex items-center gap-2.5">
@@ -103,13 +91,22 @@ export function FarmerDetailPage() {
               <FarmerStatusBadge status={farmer.status} />
             </div>
             <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-              {farmer.id} · Joined {formatDate(farmer.joinedAt)}
+              {farmer.farmerCode} · Registered {formatDate(farmer.createdAt)}
             </p>
           </div>
         </div>
-        <Button variant="outline" icon={ArrowLeft} onClick={() => navigate('/farmers')}>
-          Back
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button icon={Pencil} onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            icon={ArrowLeft}
+            onClick={() => navigate('/farmers')}
+          >
+            Back
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -128,24 +125,38 @@ export function FarmerDetailPage() {
         </dl>
       </Card>
 
-      <Card flush>
-        <CardHeader
-          title="Delivery History"
-          description="All produce delivered by this farmer"
-        />
-        <Table
-          columns={deliveryColumns}
-          rows={deliveries ?? []}
-          rowKey={(d) => d.id}
-          empty={
-            <EmptyState
-              icon={Truck}
-              title="No deliveries yet"
-              description="Deliveries from this farmer will appear here."
-            />
-          }
-        />
-      </Card>
+      {/* Future workflows — intentionally placeholders in Sprint 2. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card flush>
+          <CardHeader
+            title="Deliveries"
+            description="Produce delivered by this farmer"
+          />
+          <EmptyState
+            icon={Truck}
+            title="Coming soon"
+            description="Delivery intake and history arrive in a later sprint."
+          />
+        </Card>
+        <Card flush>
+          <CardHeader
+            title="Payments"
+            description="Settlements and payment history"
+          />
+          <EmptyState
+            icon={Wallet}
+            title="Coming soon"
+            description="Farmer settlements and payments arrive in a later sprint."
+          />
+        </Card>
+      </div>
+
+      <FarmerFormModal
+        open={editOpen}
+        farmer={farmer}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   )
 }

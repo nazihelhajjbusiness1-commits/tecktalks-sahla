@@ -1,15 +1,21 @@
 {
   "info": {
     "name": "Sahla API",
-    "description": "Requests for the Sahla Spring Boot backend. Only endpoints that currently exist in the codebase are included (see backend/src/main/java/com/farmmanagement/backend). Import the sibling environment file and select it before running requests.",
+    "description": "Sprint 2 collection for the Sahla Spring Boot backend. Covers Authentication, Farmers, Products, Grades and Pricing. Each module includes positive, validation, not-found, duplicate/conflict, unauthenticated and wrong-role cases. Import the sibling environment file and select it before running. Run 'Login' first so {{authToken}} is populated; run 'Login (wrong role)' to populate {{wrongRoleToken}} for the 403 cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }]
+  },
   "variable": [
-    {
-      "key": "authToken",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "authToken", "value": "", "type": "string" },
+    { "key": "wrongRoleToken", "value": "", "type": "string" },
+    { "key": "farmerId", "value": "", "type": "string" },
+    { "key": "farmerCode", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "gradeId", "value": "", "type": "string" },
+    { "key": "priceId", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -18,83 +24,414 @@
         {
           "name": "Register",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"firstname\": \"Jane\",\n  \"lastname\": \"Doe\",\n  \"username\": \"janedoe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phoneNumber\": \"+1234567890\",\n  \"password\": \"SuperSecret123\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "register"]
-            },
-            "description": "Creates a new user. All fields except phoneNumber are required (see RegisterRequest.java). Password must be at least 8 characters."
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstname\": \"Jane\",\n  \"lastname\": \"Doe\",\n  \"username\": \"janedoe\",\n  \"email\": \"jane.doe@example.com\",\n  \"phoneNumber\": \"+96170123456\",\n  \"password\": \"SuperSecret123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "description": "Creates a new user. All fields except phoneNumber are required. Password must be at least 8 characters."
           },
           "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201 Created', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "",
-                  "pm.test('Response has user fields', function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('id');",
-                  "    pm.expect(body).to.have.property('email');",
-                  "});"
-                ]
-              }
-            }
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));"
+            ] } }
           ]
         },
         {
           "name": "Login",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"SuperSecret123\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            },
-            "description": "Authenticates an existing user (created via Register) and returns a JWT. On success, the token is saved to the {{authToken}} collection variable for reuse in requests that require Authorization."
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@sahla.lb\",\n  \"password\": \"Password123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "description": "Authenticates and returns a JWT. Saves it to {{authToken}} for reuse. Defaults to the seeded ADMIN account (admin@sahla.lb / Password123) so all write requests succeed."
           },
           "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200 OK', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Response contains a token', function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('token');",
-                  "    pm.collectionVariables.set('authToken', body.token);",
-                  "});"
-                ]
-              }
-            }
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Response contains a token', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.data).to.have.property('token');",
+              "  pm.collectionVariables.set('authToken', body.data.token);",
+              "});"
+            ] } }
+          ]
+        },
+        {
+          "name": "Login (wrong role)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"inspector@sahla.lb\",\n  \"password\": \"Password123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "description": "Logs in as the seeded INSPECTOR account (inspector@sahla.lb / Password123), which has no write permission. Saves the JWT to {{wrongRoleToken}} for the 403 cases."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set('wrongRoleToken', pm.response.json().data.token);",
+              "}"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Farmers",
+      "item": [
+        {
+          "name": "Create farmer (valid) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"farmerCode\": \"F-PM-{{$timestamp}}\",\n  \"name\": \"Youssef Haddad\",\n  \"phone\": \"70123456\",\n  \"village\": \"Bcharre\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers", "host": ["{{baseUrl}}"], "path": ["api", "farmers"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "const b = pm.response.json();",
+              "pm.collectionVariables.set('farmerId', b.id);",
+              "pm.collectionVariables.set('farmerCode', b.farmerCode);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create farmer (missing name) -> 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"phone\": \"70123456\",\n  \"village\": \"Bcharre\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers", "host": ["{{baseUrl}}"], "path": ["api", "farmers"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('Readable message', () => pm.expect(pm.response.json().message).to.be.a('string'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create farmer (duplicate code) -> 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"farmerCode\": \"{{farmerCode}}\",\n  \"name\": \"Duplicate Farm\",\n  \"phone\": \"70123457\",\n  \"village\": \"Batroun\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers", "host": ["{{baseUrl}}"], "path": ["api", "farmers"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create farmer (no auth) -> 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"NoAuth\",\n  \"phone\": \"70123456\",\n  \"village\": \"Zahle\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers", "host": ["{{baseUrl}}"], "path": ["api", "farmers"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create farmer (wrong role) -> 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{wrongRoleToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"WrongRole\",\n  \"phone\": \"70123456\",\n  \"village\": \"Zahle\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers", "host": ["{{baseUrl}}"], "path": ["api", "farmers"] },
+            "description": "Requires {{wrongRoleToken}} from 'Login (wrong role)'. INSPECTOR is not allowed to create farmers."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+            ] } }
+          ]
+        },
+        {
+          "name": "List / search farmers -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/farmers?search=Youssef&page=0&size=10", "host": ["{{baseUrl}}"], "path": ["api", "farmers"], "query": [
+              { "key": "search", "value": "Youssef" }, { "key": "page", "value": "0" }, { "key": "size", "value": "10" }
+            ] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Paged response', () => pm.expect(pm.response.json()).to.have.property('content'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Get farmer by id -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/farmers/{{farmerId}}", "host": ["{{baseUrl}}"], "path": ["api", "farmers", "{{farmerId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Get farmer (not found) -> 404",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/farmers/999999", "host": ["{{baseUrl}}"], "path": ["api", "farmers", "999999"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Update farmer -> 200",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Youssef Haddad Updated\",\n  \"phone\": \"70123456\",\n  \"village\": \"Bcharre\",\n  \"status\": \"INACTIVE\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/farmers/{{farmerId}}", "host": ["{{baseUrl}}"], "path": ["api", "farmers", "{{farmerId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Status updated', () => pm.expect(pm.response.json().status).to.eql('INACTIVE'));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create product (valid) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Apple\",\n  \"variety\": \"PM-{{$timestamp}}\",\n  \"unit\": \"KG\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('productId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create product (invalid unit) -> 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Apple\",\n  \"variety\": \"BadUnit\",\n  \"unit\": \"POUNDS\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+            ] } }
+          ]
+        },
+        {
+          "name": "List products -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products?page=0&size=10", "host": ["{{baseUrl}}"], "path": ["api", "products"], "query": [
+              { "key": "page", "value": "0" }, { "key": "size", "value": "10" }
+            ] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Get product by id -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Update / deactivate product -> 200",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Apple\",\n  \"variety\": \"PM-updated\",\n  \"unit\": \"KG\",\n  \"active\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Grades",
+      "item": [
+        {
+          "name": "Create grade (valid) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeCode\": \"GRADE_A\",\n  \"name\": \"Grade A\",\n  \"description\": \"Premium\",\n  \"displayOrder\": 0,\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/grades", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "grades"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('gradeId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create grade (duplicate code) -> 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeCode\": \"GRADE_A\",\n  \"name\": \"Grade A again\",\n  \"displayOrder\": 1,\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/grades", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "grades"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create grade (unknown product) -> 404",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeCode\": \"GRADE_A\",\n  \"name\": \"Grade A\",\n  \"displayOrder\": 0,\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/999999/grades", "host": ["{{baseUrl}}"], "path": ["api", "products", "999999", "grades"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+            ] } }
+          ]
+        },
+        {
+          "name": "List grades for product -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/grades", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "grades"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Update grade -> 200",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Grade A (edited)\",\n  \"description\": \"Updated\",\n  \"displayOrder\": 0,\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/grades/{{gradeId}}", "host": ["{{baseUrl}}"], "path": ["api", "grades", "{{gradeId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "item": [
+        {
+          "name": "Create price (USD) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeId\": {{gradeId}},\n  \"amount\": 1.20,\n  \"currency\": \"USD\",\n  \"effectiveFrom\": \"2026-01-01T00:00:00Z\",\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/prices", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "prices"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('priceId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create price (LBP) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeId\": {{gradeId}},\n  \"amount\": 90000.00,\n  \"currency\": \"LBP\",\n  \"effectiveFrom\": \"2026-06-01T00:00:00Z\",\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/prices", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "prices"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create price (negative) -> 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeId\": {{gradeId}},\n  \"amount\": -1.00,\n  \"currency\": \"USD\",\n  \"effectiveFrom\": \"2026-01-01T00:00:00Z\",\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/prices", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "prices"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+            ] } }
+          ]
+        },
+        {
+          "name": "List prices for product -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/prices", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productId}}", "prices"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Update price -> 200",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 1.35,\n  \"currency\": \"USD\",\n  \"effectiveFrom\": \"2026-01-01T00:00:00Z\",\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/prices/{{priceId}}", "host": ["{{baseUrl}}"], "path": ["api", "prices", "{{priceId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
           ]
         }
       ]

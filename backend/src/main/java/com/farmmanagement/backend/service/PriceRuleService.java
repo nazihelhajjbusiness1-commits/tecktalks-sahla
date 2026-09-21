@@ -3,18 +3,19 @@ package com.farmmanagement.backend.service;
 import com.farmmanagement.backend.dto.PriceRuleRequest;
 import com.farmmanagement.backend.dto.PriceRuleResponse;
 import com.farmmanagement.backend.dto.PriceRuleUpdateRequest;
-import com.farmmanagement.backend.exception.InvalidPricingException;
-import com.farmmanagement.backend.exception.ResourceNotFoundException;
+import com.farmmanagement.backend.common.exception.ValidationException;
+import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
 import com.farmmanagement.backend.model.GradeDefinition;
 import com.farmmanagement.backend.model.PriceRule;
 import com.farmmanagement.backend.repository.GradeDefinitionRepository;
 import com.farmmanagement.backend.repository.PriceRuleRepository;
-import com.farmmanagement.backend.repository.ProductRepository;
+import com.farmmanagement.backend.products.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -103,7 +104,7 @@ public class PriceRuleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Grade not found with id: " + gradeId));
 
         if (!grade.getProductId().equals(productId)) {
-            throw new InvalidPricingException(
+            throw new ValidationException(
                 "Grade with id " + gradeId + " does not belong to product with id " + productId
             );
         }
@@ -111,7 +112,7 @@ public class PriceRuleService {
 
     private void validateDatePeriod(OffsetDateTime effectiveFrom, OffsetDateTime effectiveTo) {
         if (effectiveTo != null && effectiveTo.isBefore(effectiveFrom)) {
-            throw new InvalidPricingException("effectiveTo must be after effectiveFrom");
+            throw new ValidationException("effectiveTo must be after effectiveFrom");
         }
     }
 
@@ -123,12 +124,19 @@ public class PriceRuleService {
             OffsetDateTime effectiveTo,
             Long excludeId) {
 
+        // The query requires non-null bind values (PostgreSQL cannot type a bare
+        // NULL parameter): use a sentinel id when nothing is excluded, and a
+        // far-future end when the new rule is open-ended.
+        Long excludeIdOrSentinel = (excludeId != null) ? excludeId : -1L;
+        OffsetDateTime effectiveToOrMax =
+                (effectiveTo != null) ? effectiveTo : OffsetDateTime.of(9999, 12, 31, 23, 59, 59, 0, ZoneOffset.UTC);
+
         List<PriceRule> overlaps = priceRuleRepository.findOverlappingActiveRules(
-                productId, gradeId, currency, effectiveFrom, effectiveTo, excludeId
+                productId, gradeId, currency, effectiveFrom, effectiveToOrMax, excludeIdOrSentinel
         );
 
         if (!overlaps.isEmpty()) {
-            throw new InvalidPricingException(
+            throw new ValidationException(
                 "Active price period overlaps with an existing rule for this product, grade, and currency."
             );
         }

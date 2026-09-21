@@ -5,6 +5,14 @@ import jakarta.validation.constraints.Pattern;
 
 public class CreateFarmerRequest {
 
+    /**
+     * Optional. When provided it must be unique and is used as-is (suitable for
+     * receipts and searching). When omitted or blank, the backend generates a
+     * readable sequential code (e.g. F-00001).
+     */
+    @Size(max = 50)
+    private String farmerCode;
+
     @NotBlank(message = "Farmer name is required")
     @Size(max = 100)
     private String name;
@@ -20,6 +28,14 @@ public class CreateFarmerRequest {
     @NotBlank(message = "Village is required")
     @Size(max = 100)
     private String village;
+
+    public String getFarmerCode() {
+        return farmerCode;
+    }
+
+    public void setFarmerCode(String farmerCode) {
+        this.farmerCode = farmerCode;
+    }
 
     public String getName() {
         return name;

@@ -1,4 +1,4 @@
-package com.farmmanagement.backend.dto;
+package com.farmmanagement.backend.grading.dto;
 
 import lombok.Builder;
 import lombok.Data;

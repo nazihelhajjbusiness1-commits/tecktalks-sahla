@@ -1,4 +1,4 @@
-package com.farmmanagement.backend.dto;
+package com.farmmanagement.backend.grading.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

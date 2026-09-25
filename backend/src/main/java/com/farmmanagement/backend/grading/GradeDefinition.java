@@ -1,4 +1,4 @@
-package com.farmmanagement.backend.model;
+package com.farmmanagement.backend.grading;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;

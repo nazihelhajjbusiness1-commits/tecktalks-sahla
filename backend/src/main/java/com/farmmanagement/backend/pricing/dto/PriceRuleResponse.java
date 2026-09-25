@@ -1,6 +1,6 @@
-package com.farmmanagement.backend.dto;
+package com.farmmanagement.backend.pricing.dto;
 
-import com.farmmanagement.backend.model.PriceRule.Currency;
+import com.farmmanagement.backend.pricing.PriceRule.Currency;
 import lombok.Builder;
 import lombok.Data;
 

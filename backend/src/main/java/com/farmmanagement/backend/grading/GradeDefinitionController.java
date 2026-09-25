@@ -1,9 +1,8 @@
-package com.farmmanagement.backend.controller;
+package com.farmmanagement.backend.grading;
 
-import com.farmmanagement.backend.dto.GradeDefinitionRequest;
-import com.farmmanagement.backend.dto.GradeDefinitionResponse;
-import com.farmmanagement.backend.dto.GradeDefinitionUpdateRequest;
-import com.farmmanagement.backend.service.GradeDefinitionService;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionRequest;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionResponse;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

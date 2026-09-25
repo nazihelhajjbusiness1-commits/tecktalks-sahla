@@ -147,6 +147,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/products/**")
                         .hasAnyRole("ADMIN", "MANAGER")
 
+                        // deliveries
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/deliveries", "/api/deliveries/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE", "ACCOUNTANT", "WAREHOUSE_EMPLOYEE", "INSPECTOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/deliveries/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE")
+
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/weight")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE")
+
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/grade")
+                        .hasAnyRole("ADMIN", "MANAGER", "INSPECTOR")
+
                         // grades (read is covered by the products GET matcher above)
                         .requestMatchers(HttpMethod.POST, "/api/products/*/grades")
                         .hasAnyRole("ADMIN", "MANAGER")

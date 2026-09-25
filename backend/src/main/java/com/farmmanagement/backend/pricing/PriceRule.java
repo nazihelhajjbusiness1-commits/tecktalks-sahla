@@ -1,4 +1,4 @@
-package com.farmmanagement.backend.model;
+package com.farmmanagement.backend.pricing;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;

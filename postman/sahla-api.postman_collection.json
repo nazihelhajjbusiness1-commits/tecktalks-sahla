@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Sahla API",
-    "description": "Requests for the Sahla Spring Boot backend. Covers Authentication, Farmers, Products, Grades, Pricing (Sprint 2), and Deliveries, Weight Capture, Manual Grading & Confirmation, Inventory Movements, Inventory Balance & History, and Delivery Audit Log (Sprint 3).\n\nKnown gap #1 (Farmers/Products): /api/auth/register always creates a WAREHOUSE_EMPLOYEE account and there is currently no API to assign ADMIN/MANAGER/RECEIVING_EMPLOYEE roles. Farmer endpoints require ADMIN, MANAGER, or RECEIVING_EMPLOYEE; Product create/update require ADMIN or MANAGER. Until role assignment exists, requests marked '(blocked by role gap)' below are correctly built against the API contract but will return 403 Forbidden when run with a self-registered account.\n\nKnown gap #2 (Grades/Pricing): this code lives on PR #7 / branch amansayrawan-patch-1, which does not compile as pushed - GradeDefinitionUpdateRequest, and the exception classes DuplicateResourceException/InvalidPricingException/ResourceNotFoundException under com.farmmanagement.backend.exception, are referenced but don't exist in the branch. Requests marked '(branch does not compile)' are built from the controller/service source as the intended contract and will start working once those classes are added and exception handling is wired up. That branch also never restricted Grades/Pricing endpoints by role, unlike Farmers/Products.\n\nKnown gap #3 (Deliveries/Weight/Grading/Inventory, DT-50 through DT-57): none of this backend exists on this branch yet - no controllers, DTOs, or DB migrations. The Deliveries, Weight Capture, Manual Grading & Confirmation, Inventory Movements, Inventory Balance & History, and Delivery Audit Log folders are written against a *proposed* contract inferred from the ticket titles and the Farmer -> Delivery -> Weight -> Grading -> Pricing -> Inventory -> Payment workflow in docs/README.md, not from real source. Every request in those folders is tagged '(planned, not implemented)' and will fail (connection refused or 404) until DT-50 through DT-57 land - revisit paths, field names, and status codes against the real implementation at that point.\n\nRequests that only need GET on Products, or that expect 401/403, are runnable today.\n\nImport the sibling environment file and select it before running requests. Run the Authentication folder first so {{authToken}} is populated.",
+    "description": "Requests for the Sahla Spring Boot backend. Covers Authentication, Farmers, Products, Grades, Pricing (Sprint 2), and Deliveries, Weight Capture, Manual Grading & Confirmation, Inventory Movements, Inventory Balance & History, and Delivery Audit Log (Sprint 3).\n\nKnown gap #1 (Farmers/Products): /api/auth/register always creates a WAREHOUSE_EMPLOYEE account and there is currently no API to assign ADMIN/MANAGER/RECEIVING_EMPLOYEE roles. Farmer endpoints require ADMIN, MANAGER, or RECEIVING_EMPLOYEE; Product create/update require ADMIN or MANAGER. Until role assignment exists, requests marked '(blocked by role gap)' below are correctly built against the API contract but will return 403 Forbidden when run with a self-registered account.\n\nKnown gap #2 (Grades/Pricing): this code lives on PR #7 / branch amansayrawan-patch-1, which does not compile as pushed - GradeDefinitionUpdateRequest, and the exception classes DuplicateResourceException/InvalidPricingException/ResourceNotFoundException under com.farmmanagement.backend.exception, are referenced but don't exist in the branch. Requests marked '(branch does not compile)' are built from the controller/service source as the intended contract and will start working once those classes are added and exception handling is wired up. That branch also never restricted Grades/Pricing endpoints by role, unlike Farmers/Products.\n\nDT-50 through DT-53 (Deliveries, Weight Capture, Manual Grading & Confirmation) landed on origin/feature/delivery-management, and those three folders are now written against the real controller/service/DTO source, not a guess: no ApiResponse envelope (bodies are the raw DTO/Page; errors are a flat {timestamp, status, error, message, path}), ids are numeric (Long), delivery creation returns 200 (not 201), weight capture is POST and 409s if the delivery isn't PENDING, and grading (POST .../grade, ADMIN/MANAGER/INSPECTOR only) both grades and confirms in one call - there is no separate confirm/cancel endpoint. Exercising the happy path needs seed data for a farmer, a product, a GradeDefinition, and an active PriceRule (see the Grades/Pricing folders).\n\nKnown gap #3 (Inventory, DT-54 through DT-57): none of this backend exists on this branch yet - no controllers, DTOs, or DB migrations. The Inventory Movements, Inventory Balance & History, and Delivery Audit Log folders are written against a *proposed* contract inferred from the ticket titles and the Farmer -> Delivery -> Weight -> Grading -> Pricing -> Inventory -> Payment workflow in docs/README.md, not from real source. Every request in those folders is tagged '(planned, not implemented)' and will fail (connection refused or 404) until DT-54 through DT-57 land - revisit paths, field names, and status codes against the real implementation at that point.\n\nRequests that only need GET on Products, or that expect 401/403, are runnable today.\n\nImport the sibling environment file and select it before running requests. Run the Authentication folder first so {{authToken}} is populated.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -1875,10 +1875,10 @@
     },
     {
       "name": "Deliveries",
-      "description": "Sprint 3 (DT-50/DT-51). Planned contract for delivery creation, retrieval, and state lifecycle - backend package `com.farmmanagement.backend.deliveries` does not exist on this branch yet. Requests below are built from the domain workflow (Farmer -> Delivery -> Weight -> Grading -> Pricing -> Inventory -> Payment) and the DT-50/DT-51 ticket titles, not from real controller/DTO source. Treat paths, field names, and status codes as a proposal to validate against the implementation once it lands, not a confirmed contract. All requests are tagged '(planned, not implemented)'.",
+      "description": "Sprint 3 (DT-50/DT-51), confirmed against origin/feature/delivery-management (com.farmmanagement.backend.deliveries.DeliveryController). No ApiResponse envelope here - success bodies are the raw DTO/Page, and errors are a flat {timestamp, status, error, message, path} (see GlobalExceptionHandler). Ids are numeric (Long), not UUIDs. POST returns 200 OK (not 201). There is no confirm/cancel/delete endpoint - PUT only updates quantity/deliveryDate/notes, never status. The DeliveryStatus enum also has DELIVERED and CANCELLED values, but nothing in this branch transitions a delivery into either of them yet.",
       "item": [
         {
-          "name": "Create Delivery - Valid (201, planned, not implemented)",
+          "name": "Create Delivery - Valid (200)",
           "request": {
             "method": "POST",
             "header": [
@@ -1887,14 +1887,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"farmerId\": \"{{farmerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"deliveryDate\": \"2026-09-23\",\n  \"notes\": \"Morning delivery, truck #4\"\n}"
+              "raw": "{\n  \"farmerId\": {{farmerId}},\n  \"productId\": {{productId}},\n  \"quantity\": 380.0,\n  \"deliveryDate\": \"2026-09-23\",\n  \"notes\": \"Morning delivery, truck #4\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/deliveries",
               "host": ["{{baseUrl}}"],
               "path": ["api", "deliveries"]
             },
-            "description": "Expected to require RECEIVING_EMPLOYEE (or ADMIN/MANAGER). Expected initial status is PENDING, before weight or grading are captured. Update this once DT-51 defines the real request shape."
+            "description": "Requires ADMIN, MANAGER, or RECEIVING_EMPLOYEE (SecurityConfig). quantity is set here by the caller and becomes the target the Weight Capture folder's grossWeight-tareWeight must exactly equal (DeliveryWeightService.captureWeight). Status starts at PENDING; unit is copied from the product, not sent by the client."
           },
           "event": [
             {
@@ -1902,17 +1902,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 201 Created', function () {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "pm.test('Response has delivery id and PENDING status', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.data).to.have.property('id');",
-                  "    pm.expect(body.data.status).to.eql('PENDING');",
-                  "    if (body.data.id) {",
-                  "        pm.collectionVariables.set('deliveryId', body.data.id);",
-                  "    }",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body.status).to.eql('PENDING');",
+                  "    pm.collectionVariables.set('deliveryId', body.id);",
                   "});"
                 ]
               }
@@ -1920,7 +1918,7 @@
           ]
         },
         {
-          "name": "Create Delivery - Missing Farmer (400, planned, not implemented)",
+          "name": "Create Delivery - Missing Farmer (400)",
           "request": {
             "method": "POST",
             "header": [
@@ -1929,14 +1927,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"deliveryDate\": \"2026-09-23\"\n}"
+              "raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 380.0,\n  \"deliveryDate\": \"2026-09-23\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/deliveries",
               "host": ["{{baseUrl}}"],
               "path": ["api", "deliveries"]
             },
-            "description": "farmerId omitted. Expects validation to reject a delivery with no farmer."
+            "description": "farmerId omitted, which fails CreateDeliveryRequest's @NotNull before any repository lookup happens - MethodArgumentNotValidException, so this is a 400 'Validation Error', not a 404."
           },
           "event": [
             {
@@ -1946,6 +1944,46 @@
                 "exec": [
                   "pm.test('Status is 400 Bad Request', function () {",
                   "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error body matches ErrorResponse shape', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('status', 400);",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Delivery - Farmer Not Found (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"farmerId\": 999999999,\n  \"productId\": {{productId}},\n  \"quantity\": 380.0,\n  \"deliveryDate\": \"2026-09-23\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries"]
+            },
+            "description": "A well-formed but nonexistent farmerId. DeliveryService.createDelivery throws ResourceNotFoundException before ever touching productId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
                   "});"
                 ]
               }
@@ -1959,14 +1997,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"farmerId\": \"{{farmerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"deliveryDate\": \"2026-09-23\"\n}"
+              "raw": "{\n  \"farmerId\": {{farmerId}},\n  \"productId\": {{productId}},\n  \"quantity\": 380.0,\n  \"deliveryDate\": \"2026-09-23\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/deliveries",
               "host": ["{{baseUrl}}"],
               "path": ["api", "deliveries"]
             },
-            "description": "No Authorization header. Should return 401 from the security chain once the route is registered."
+            "description": "No Authorization header. The Spring Security filter chain rejects before the controller runs."
           },
           "event": [
             {
@@ -1983,7 +2021,40 @@
           ]
         },
         {
-          "name": "Get Delivery - Valid (200, planned, not implemented)",
+          "name": "Create Delivery - Wrong Role (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"farmerId\": {{farmerId}},\n  \"productId\": {{productId}},\n  \"quantity\": 380.0,\n  \"deliveryDate\": \"2026-09-23\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries"]
+            },
+            "description": "Run with a token for a role outside ADMIN/MANAGER/RECEIVING_EMPLOYEE (e.g. WAREHOUSE_EMPLOYEE or INSPECTOR - both can read deliveries but not create them)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Delivery - Valid (200)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
@@ -1992,7 +2063,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "deliveries", "{{deliveryId}}"]
             },
-            "description": "Uses {{deliveryId}} captured by 'Create Delivery - Valid'."
+            "description": "Uses {{deliveryId}} captured by 'Create Delivery - Valid'. Open to any of ADMIN/MANAGER/RECEIVING_EMPLOYEE/ACCOUNTANT/WAREHOUSE_EMPLOYEE/INSPECTOR."
           },
           "event": [
             {
@@ -2006,8 +2077,8 @@
                   "",
                   "pm.test('Response has delivery fields', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.data).to.have.property('id');",
-                  "    pm.expect(body.data).to.have.property('status');",
+                  "    pm.expect(body).to.have.property('id');",
+                  "    pm.expect(body).to.have.property('status');",
                   "});"
                 ]
               }
@@ -2015,16 +2086,16 @@
           ]
         },
         {
-          "name": "Get Delivery - Not Found (404, planned, not implemented)",
+          "name": "Get Delivery - Not Found (404)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/deliveries/00000000-0000-0000-0000-000000000000",
+              "raw": "{{baseUrl}}/api/deliveries/999999999",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "00000000-0000-0000-0000-000000000000"]
+              "path": ["api", "deliveries", "999999999"]
             },
-            "description": "Well-formed UUID that should not exist."
+            "description": "A numeric id that should not exist (ids are Long, not UUID)."
           },
           "event": [
             {
@@ -2041,7 +2112,7 @@
           ]
         },
         {
-          "name": "List/Filter Deliveries (200, planned, not implemented)",
+          "name": "List/Filter Deliveries (200)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
@@ -2056,7 +2127,7 @@
                 { "key": "size", "value": "10" }
               ]
             },
-            "description": "Matches the 'Deliveries List Page and Delivery Filters' frontend work (DT-58): expects filtering by status and farmerId, paginated like Products/Farmers."
+            "description": "Supports farmerId, productId, status (DeliveryStatus enum), from/to (LocalDate), page, size. Response is a raw Spring Page - fields are top-level (content, totalElements, ...), not nested under a data wrapper."
           },
           "event": [
             {
@@ -2070,7 +2141,7 @@
                   "",
                   "pm.test('Response is a page', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.data).to.have.property('content');",
+                  "    pm.expect(body).to.have.property('content');",
                   "});"
                 ]
               }
@@ -2078,93 +2149,20 @@
           ]
         },
         {
-          "name": "Cancel Delivery - Invalid Transition (409-equivalent, planned, not implemented)",
+          "name": "List Deliveries - Invalid Date Range (400)",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/cancel",
+              "raw": "{{baseUrl}}/api/deliveries?from=2026-09-30&to=2026-09-01",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "cancel"]
+              "path": ["api", "deliveries"],
+              "query": [
+                { "key": "from", "value": "2026-09-30" },
+                { "key": "to", "value": "2026-09-01" }
+              ]
             },
-            "description": "Run this after 'Confirm Delivery - Valid' in the Grading folder so {{deliveryId}} is already CONFIRMED. Expects the state machine to reject cancelling a confirmed delivery - exact status code (409 vs 400) depends on how DT-51 implements the lifecycle guard."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is a client error (400 or 409)', function () {",
-                  "    pm.expect([400, 409]).to.include(pm.response.code);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Weight Capture",
-      "description": "Sprint 3 (DT-52). Planned contract for capturing gross/tare weight and deriving net weight on a delivery. No backend source exists for this yet; paths/fields are a proposal based on the ticket title and the Farmer -> Delivery -> Weight workflow in docs/README.md.",
-      "item": [
-        {
-          "name": "Capture Weight - Valid (200, planned, not implemented)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"grossWeightKg\": 500.0,\n  \"tareWeightKg\": 120.0\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
-            },
-            "description": "Expects the server to compute netWeightKg = grossWeightKg - tareWeightKg (380.0 here) rather than trust a client-supplied net weight."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200 OK', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Net weight is computed server-side', function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.data.netWeightKg).to.eql(380.0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Capture Weight - Tare Exceeds Gross (400, planned, not implemented)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"grossWeightKg\": 100.0,\n  \"tareWeightKg\": 150.0\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
-            },
-            "description": "tareWeightKg > grossWeightKg would produce a negative net weight. Expects this to be rejected rather than silently stored."
+            "description": "from after to. DeliveryService.getDeliveries throws ValidationException('\\'from\\' date must not be after \\'to\\' date')."
           },
           "event": [
             {
@@ -2181,23 +2179,61 @@
           ]
         },
         {
-          "name": "Capture Weight - Delivery Not Found (404, planned, not implemented)",
+          "name": "Update Delivery - Valid (200)",
           "request": {
-            "method": "PATCH",
+            "method": "PUT",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"grossWeightKg\": 500.0,\n  \"tareWeightKg\": 120.0\n}"
+              "raw": "{\n  \"notes\": \"Corrected note after re-weigh\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/deliveries/00000000-0000-0000-0000-000000000000/weight",
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "00000000-0000-0000-0000-000000000000", "weight"]
+              "path": ["api", "deliveries", "{{deliveryId}}"]
             },
-            "description": "Well-formed UUID that should not exist."
+            "description": "Only quantity/deliveryDate/notes are updatable (UpdateDeliveryRequest); each field is optional and left unchanged if omitted. There is no status field here - status only changes via the Weight Capture and Manual Grading endpoints below. Requires ADMIN, MANAGER, or RECEIVING_EMPLOYEE."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Notes were updated', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.notes).to.eql('Corrected note after re-weigh');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Delivery - Not Found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"n/a\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/999999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "999999999"]
+            },
+            "description": "A numeric id that should not exist."
           },
           "event": [
             {
@@ -2216,27 +2252,27 @@
       ]
     },
     {
-      "name": "Manual Grading & Confirmation",
-      "description": "Sprint 3 (DT-53). Planned contract for recording a manual grade and confirming a delivery. Confirmation is expected to be the trigger for the inventory movement created by DT-55, so 'Confirm Delivery - Valid' should be run before anything in the Inventory Movements folder.",
+      "name": "Weight Capture",
+      "description": "Sprint 3 (DT-52), confirmed against origin/feature/delivery-management (DeliveryWeightController/DeliveryWeightService). POST, not PATCH, and returns 201 Created. Two business rules worth knowing: (1) the delivery must currently be PENDING or this 409s; (2) grossWeight - tareWeight must exactly equal the delivery's quantity field set at creation, or this 400s - it is not just 'must be positive'. Run 'Create Delivery - Valid' first so {{deliveryId}} and its quantity (380.0) are fresh.",
       "item": [
         {
-          "name": "Submit Grade - Valid (200, planned, not implemented)",
+          "name": "Capture Weight - Valid (201)",
           "request": {
-            "method": "PATCH",
+            "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"gradeId\": \"{{gradeId}}\",\n  \"notes\": \"Consistent color, minimal bruising\"\n}"
+              "raw": "{\n  \"grossWeight\": 500.0,\n  \"tareWeight\": 120.0\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
             },
-            "description": "Expects weight to already be captured (see Weight Capture folder) before a grade can be recorded, though DT-53 may not enforce that ordering."
+            "description": "500.0 - 120.0 = 380.0, matching the quantity from Create Delivery. netWeight is computed server-side, not trusted from the client. On success the delivery moves PENDING -> WEIGHED. Requires ADMIN, MANAGER, or RECEIVING_EMPLOYEE."
           },
           "event": [
             {
@@ -2244,13 +2280,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 200 OK', function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
                   "});",
                   "",
-                  "pm.test('Response reflects the assigned grade', function () {",
+                  "pm.test('Net weight matches the delivery quantity', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.data.gradeId).to.eql(pm.collectionVariables.get('gradeId'));",
+                  "    pm.expect(body.netWeight).to.eql(380.0);",
                   "});"
                 ]
               }
@@ -2258,23 +2294,122 @@
           ]
         },
         {
-          "name": "Submit Grade - Grade Not Found (404, planned, not implemented)",
+          "name": "Capture Weight - Tare Not Less Than Gross (400)",
           "request": {
-            "method": "PATCH",
+            "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"gradeId\": \"00000000-0000-0000-0000-000000000000\"\n}"
+              "raw": "{\n  \"grossWeight\": 100.0,\n  \"tareWeight\": 150.0\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
             },
-            "description": "Well-formed but nonexistent gradeId."
+            "description": "Run against a fresh, still-PENDING delivery. tareWeight >= grossWeight fails the first check in captureWeight ('Gross weight must be greater than tare weight') before the quantity-match check ever runs."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Capture Weight - Net Weight Does Not Match Quantity (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grossWeight\": 500.0,\n  \"tareWeight\": 50.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
+            },
+            "description": "Run against a fresh, still-PENDING delivery created with quantity 380.0. 500.0 - 50.0 = 450.0 != 380.0, so this 400s even though tareWeight < grossWeight."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Capture Weight - Already Weighed (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grossWeight\": 500.0,\n  \"tareWeight\": 120.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
+            },
+            "description": "Run this immediately after 'Capture Weight - Valid' against the same {{deliveryId}}, which is now WEIGHED. captureWeight requires status PENDING and throws ConflictException otherwise."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Capture Weight - Delivery Not Found (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grossWeight\": 500.0,\n  \"tareWeight\": 120.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/999999999/weight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "999999999", "weight"]
+            },
+            "description": "A numeric id that should not exist."
           },
           "event": [
             {
@@ -2291,16 +2426,20 @@
           ]
         },
         {
-          "name": "Confirm Delivery - Valid (200, planned, not implemented)",
+          "name": "Capture Weight - Unauthenticated (401)",
           "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "confirm"]
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grossWeight\": 500.0,\n  \"tareWeight\": 120.0\n}"
             },
-            "description": "Run after weight capture and grade submission succeed. Expects status to move to CONFIRMED and, per DT-55, to create an inventory movement as a side effect - see Inventory Movements folder."
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "weight"]
+            },
+            "description": "No Authorization header."
           },
           "event": [
             {
@@ -2308,13 +2447,53 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 200 OK', function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test('Status is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Manual Grading & Confirmation",
+      "description": "Sprint 3 (DT-53), confirmed against origin/feature/delivery-management (DeliveryGradeController/DeliveryGradeService). There is no separate confirm endpoint - POST .../grade both grades and confirms in one step: the delivery must be WEIGHED, the Grade enum value (GRADE_A/GRADE_B/GRADE_C/PREMIUM/REJECT) must map to a GradeDefinition for the delivery's product, and unless the grade is REJECT there must be exactly one active PriceRule to price it. Only ADMIN, MANAGER, or INSPECTOR may call this - notably not RECEIVING_EMPLOYEE, unlike Create/Weight. Run against a {{deliveryId}} that has already been through 'Capture Weight - Valid'.",
+      "item": [
+        {
+          "name": "Grade Delivery - Valid, Confirms with Price (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"GRADE_A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "Requires a GradeDefinition with code GRADE_A configured for the delivery's product, and one active PriceRule for that product+grade (see the Grades/Pricing folders' seed data). On success the delivery status becomes CONFIRMED and totalPrice = priceRule.amount * delivery.quantity."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
                   "});",
                   "",
-                  "pm.test('Delivery status is CONFIRMED', function () {",
+                  "pm.test('Resulting status is CONFIRMED with a computed price', function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.data.status).to.eql('CONFIRMED');",
+                  "    pm.expect(body.resultingStatus).to.eql('CONFIRMED');",
+                  "    pm.expect(body).to.have.property('totalPrice');",
                   "});"
                 ]
               }
@@ -2322,16 +2501,23 @@
           ]
         },
         {
-          "name": "Confirm Delivery - Missing Weight or Grade (409-equivalent, planned, not implemented)",
+          "name": "Grade Delivery - REJECT Confirms Without Price (201)",
           "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "deliveries", "{{deliveryId}}", "confirm"]
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"REJECT\"\n}"
             },
-            "description": "Run against a freshly created delivery (create a new one first) that has no weight or grade yet. Expects confirmation to be rejected as a business-rule violation rather than allowed with nulls."
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "Run against a different, already-WEIGHED delivery. REJECT skips the price-rule lookup entirely - resultingStatus is REJECTED and totalPrice stays null."
           },
           "event": [
             {
@@ -2339,8 +2525,176 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is a client error (400 or 409)', function () {",
-                  "    pm.expect([400, 409]).to.include(pm.response.code);",
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Resulting status is REJECTED with no price', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.resultingStatus).to.eql('REJECTED');",
+                  "    pm.expect(body.totalPrice).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grade Delivery - Wrong State, Not Yet Weighed (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"GRADE_A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "Run against a freshly created delivery that has skipped Weight Capture (still PENDING). gradeDelivery requires status WEIGHED and throws ConflictException otherwise."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grade Delivery - No Grade Definition for Product (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"PREMIUM\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "Use a grade code that has no GradeDefinition row for this delivery's product (check the Grades folder's seed data for what's configured). Returns 404, not 400, since the enum value itself is valid."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grade Delivery - Delivery Not Found (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"GRADE_A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/999999999/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "999999999", "grade"]
+            },
+            "description": "A numeric id that should not exist."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grade Delivery - Wrong Role (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"GRADE_A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "Run with a RECEIVING_EMPLOYEE token - that role can create deliveries and capture weight, but SecurityConfig excludes it from grading (ADMIN/MANAGER/INSPECTOR only)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grade Delivery - Unauthenticated (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"GRADE_A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deliveries", "{{deliveryId}}", "grade"]
+            },
+            "description": "No Authorization header."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
                   "});"
                 ]
               }

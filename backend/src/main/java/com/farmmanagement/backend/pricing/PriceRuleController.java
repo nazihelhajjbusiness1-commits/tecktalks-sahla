@@ -1,9 +1,8 @@
-package com.farmmanagement.backend.controller;
+package com.farmmanagement.backend.pricing;
 
-import com.farmmanagement.backend.dto.PriceRuleRequest;
-import com.farmmanagement.backend.dto.PriceRuleResponse;
-import com.farmmanagement.backend.dto.PriceRuleUpdateRequest;
-import com.farmmanagement.backend.service.PriceRuleService;
+import com.farmmanagement.backend.pricing.dto.PriceRuleRequest;
+import com.farmmanagement.backend.pricing.dto.PriceRuleResponse;
+import com.farmmanagement.backend.pricing.dto.PriceRuleUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

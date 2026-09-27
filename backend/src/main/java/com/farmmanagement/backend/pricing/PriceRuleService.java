@@ -1,14 +1,12 @@
-package com.farmmanagement.backend.service;
+package com.farmmanagement.backend.pricing;
 
-import com.farmmanagement.backend.dto.PriceRuleRequest;
-import com.farmmanagement.backend.dto.PriceRuleResponse;
-import com.farmmanagement.backend.dto.PriceRuleUpdateRequest;
+import com.farmmanagement.backend.pricing.dto.PriceRuleRequest;
+import com.farmmanagement.backend.pricing.dto.PriceRuleResponse;
+import com.farmmanagement.backend.pricing.dto.PriceRuleUpdateRequest;
 import com.farmmanagement.backend.common.exception.ValidationException;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
-import com.farmmanagement.backend.model.GradeDefinition;
-import com.farmmanagement.backend.model.PriceRule;
-import com.farmmanagement.backend.repository.GradeDefinitionRepository;
-import com.farmmanagement.backend.repository.PriceRuleRepository;
+import com.farmmanagement.backend.grading.GradeDefinition;
+import com.farmmanagement.backend.grading.GradeDefinitionRepository;
 import com.farmmanagement.backend.products.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

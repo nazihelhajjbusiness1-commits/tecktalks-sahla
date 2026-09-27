@@ -1,7 +1,6 @@
-package com.farmmanagement.backend.repository;
+package com.farmmanagement.backend.pricing;
 
-import com.farmmanagement.backend.model.PriceRule;
-import com.farmmanagement.backend.model.PriceRule.Currency;
+import com.farmmanagement.backend.pricing.PriceRule.Currency;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,5 +40,26 @@ public interface PriceRuleRepository extends JpaRepository<PriceRule, Long> {
         @Param("effectiveFrom") OffsetDateTime effectiveFrom,
         @Param("effectiveTo") OffsetDateTime effectiveTo,
         @Param("excludeId") Long excludeId
+    );
+
+    /**
+     * Finds the price rule(s) active for a product/grade at a given instant (asOf),
+     * across all currencies. The currency is no longer supplied by the caller: it is
+     * determined from whichever price rule is actually active. Normally this returns
+     * at most one rule (the caller is expected to resolve/report an ambiguity if more
+     * than one currency is active for the same product/grade at the same time).
+     */
+    @Query("""
+        SELECT p FROM PriceRule p
+        WHERE p.productId = :productId
+          AND p.gradeId = :gradeId
+          AND p.active = true
+          AND p.effectiveFrom <= :asOf
+          AND (p.effectiveTo IS NULL OR p.effectiveTo > :asOf)
+    """)
+    List<PriceRule> findActivePriceRules(
+        @Param("productId") Long productId,
+        @Param("gradeId") Long gradeId,
+        @Param("asOf") OffsetDateTime asOf
     );
 }

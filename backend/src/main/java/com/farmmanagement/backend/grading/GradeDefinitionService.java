@@ -1,12 +1,10 @@
-package com.farmmanagement.backend.service;
+package com.farmmanagement.backend.grading;
 
-import com.farmmanagement.backend.dto.GradeDefinitionRequest;
-import com.farmmanagement.backend.dto.GradeDefinitionResponse;
-import com.farmmanagement.backend.dto.GradeDefinitionUpdateRequest;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionRequest;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionResponse;
+import com.farmmanagement.backend.grading.dto.GradeDefinitionUpdateRequest;
 import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
-import com.farmmanagement.backend.model.GradeDefinition;
-import com.farmmanagement.backend.repository.GradeDefinitionRepository;
 import com.farmmanagement.backend.products.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

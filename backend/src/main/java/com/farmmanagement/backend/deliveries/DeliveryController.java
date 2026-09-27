@@ -75,4 +75,9 @@ public class DeliveryController {
     ) {
         return ResponseEntity.ok(deliveryService.updateDelivery(id, request));
     }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<DeliveryAuditLog>> getDeliveryHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(deliveryAuditLogRepository.findByDeliveryIdOrderByCreatedAtDesc(id));
+    }
 }

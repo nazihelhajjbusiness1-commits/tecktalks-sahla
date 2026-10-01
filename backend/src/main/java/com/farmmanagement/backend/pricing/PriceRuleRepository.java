@@ -62,4 +62,20 @@ public interface PriceRuleRepository extends JpaRepository<PriceRule, Long> {
         @Param("gradeId") Long gradeId,
         @Param("asOf") OffsetDateTime asOf
     );
+
+    @Query("""
+        SELECT p FROM PriceRule p
+        WHERE p.productId = :productId
+          AND p.gradeId = :gradeId
+          AND p.currency = :currency
+          AND p.active = true
+          AND p.effectiveFrom <= :asOf
+          AND (p.effectiveTo IS NULL OR p.effectiveTo > :asOf)
+    """)
+    List<PriceRule> findActivePriceRules(
+        @Param("productId") Long productId,
+        @Param("gradeId") Long gradeId,
+        @Param("currency") Currency currency,
+        @Param("asOf") OffsetDateTime asOf
+    );
 }

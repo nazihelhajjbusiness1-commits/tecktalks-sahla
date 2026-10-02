@@ -42,6 +42,9 @@ public class FarmerSettlement {
     @Column(name = "net_amount", precision = 19, scale = 4)
     private BigDecimal netAmount;
 
+    @Column(name = "source_price_rule_id")
+    private Long sourcePriceRuleId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SettlementStatus status = SettlementStatus.DRAFT;
@@ -140,6 +143,14 @@ public class FarmerSettlement {
 
     public void setNetAmount(BigDecimal netAmount) {
         this.netAmount = netAmount;
+    }
+
+    public Long getSourcePriceRuleId() {
+        return sourcePriceRuleId;
+    }
+
+    public void setSourcePriceRuleId(Long sourcePriceRuleId) {
+        this.sourcePriceRuleId = sourcePriceRuleId;
     }
 
     public SettlementStatus getStatus() {

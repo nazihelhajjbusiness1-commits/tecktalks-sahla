@@ -166,6 +166,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/settlement/preview")
                         .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
 
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/settlement/calculate")
+                        .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/settlement/confirm")
+                        .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+
                         // grades (read is covered by the products GET matcher above)
                         .requestMatchers(HttpMethod.POST, "/api/products/*/grades")
                         .hasAnyRole("ADMIN", "MANAGER")

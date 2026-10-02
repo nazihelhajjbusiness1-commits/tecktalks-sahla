@@ -12,6 +12,8 @@ public class FarmerSettlementResponse {
 
     private Long deliveryId;
 
+    private Long farmerId;
+
     private BigDecimal unitPriceSnapshot;
 
     private Currency currency;
@@ -25,6 +27,8 @@ public class FarmerSettlementResponse {
     private BigDecimal deductionsTotal;
 
     private BigDecimal netAmount;
+
+    private Long sourcePriceRuleId;
 
     private SettlementStatus status;
 
@@ -52,6 +56,14 @@ public class FarmerSettlementResponse {
 
     public void setDeliveryId(Long deliveryId) {
         this.deliveryId = deliveryId;
+    }
+
+    public Long getFarmerId() {
+        return farmerId;
+    }
+
+    public void setFarmerId(Long farmerId) {
+        this.farmerId = farmerId;
     }
 
     public BigDecimal getUnitPriceSnapshot() {
@@ -108,6 +120,14 @@ public class FarmerSettlementResponse {
 
     public void setNetAmount(BigDecimal netAmount) {
         this.netAmount = netAmount;
+    }
+
+    public Long getSourcePriceRuleId() {
+        return sourcePriceRuleId;
+    }
+
+    public void setSourcePriceRuleId(Long sourcePriceRuleId) {
+        this.sourcePriceRuleId = sourcePriceRuleId;
     }
 
     public SettlementStatus getStatus() {

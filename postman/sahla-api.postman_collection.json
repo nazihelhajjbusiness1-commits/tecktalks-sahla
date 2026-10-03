@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Sahla API",
-    "description": "Sprint 2 collection for the Sahla Spring Boot backend. Covers Authentication, Farmers, Products, Grades and Pricing. Each module includes positive, validation, not-found, duplicate/conflict, unauthenticated and wrong-role cases. Import the sibling environment file and select it before running. Run 'Login' first so {{authToken}} is populated; run 'Login (wrong role)' to populate {{wrongRoleToken}} for the 403 cases.",
+    "description": "Collection for the Sahla Spring Boot backend. Covers Authentication, Farmers, Products, Grades, Pricing, Deliveries and Sprint 4 Settlement. Each module includes positive, validation, not-found, duplicate/conflict, unauthenticated and wrong-role cases. Import the sibling environment file and select it before running. Run 'Login' first so {{authToken}} is populated; run 'Login (wrong role)' to populate {{wrongRoleToken}} for the 403 cases. Run folders in order (Farmers/Products/Grades/Pricing before Deliveries before Settlement) since the Settlement folder depends on a confirmed delivery.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -15,7 +15,10 @@
     { "key": "farmerCode", "value": "", "type": "string" },
     { "key": "productId", "value": "", "type": "string" },
     { "key": "gradeId", "value": "", "type": "string" },
-    { "key": "priceId", "value": "", "type": "string" }
+    { "key": "priceId", "value": "", "type": "string" },
+    { "key": "deliveryId", "value": "", "type": "string" },
+    { "key": "pendingDeliveryId", "value": "", "type": "string" },
+    { "key": "settlementId", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -431,6 +434,279 @@
           "event": [
             { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('200 OK', () => pm.response.to.have.status(200));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Settlement (Sprint 4)",
+      "description": "DT-78: Settlement Preview, Calculation and Confirmation for the Sprint 4 financial workflow. Depends on 'Login' ({{authToken}}/{{wrongRoleToken}}) and the Farmers folder ({{farmerId}}) having run. Creates its own dedicated product/grade/price so it never collides with price rules created elsewhere in the collection. Ledger, balance, payment and statement requests will be added once DT-70 to DT-73 are implemented.",
+      "item": [
+        {
+          "name": "Setup: create settlement demo product -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Apple\",\n  \"variety\": \"Settlement-{{$timestamp}}\",\n  \"unit\": \"KG\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('settlementProductId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Setup: create settlement demo grade -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeCode\": \"GRADE_A\",\n  \"name\": \"Grade A\",\n  \"description\": \"Premium\",\n  \"displayOrder\": 0,\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{settlementProductId}}/grades", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{settlementProductId}}", "grades"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('settlementGradeId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Setup: create settlement demo USD price ($1.20/kg) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"gradeId\": {{settlementGradeId}},\n  \"amount\": 1.20,\n  \"currency\": \"USD\",\n  \"effectiveFrom\": \"2026-01-01T00:00:00Z\",\n  \"active\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products/{{settlementProductId}}/prices", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{settlementProductId}}", "prices"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create delivery for settlement (500kg) -> 200",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"farmerId\": {{farmerId}},\n  \"productId\": {{settlementProductId}},\n  \"quantity\": 500.000,\n  \"deliveryDate\": \"2026-09-01\",\n  \"notes\": \"Sprint 4 settlement demo delivery\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries", "host": ["{{baseUrl}}"], "path": ["api", "deliveries"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('deliveryId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Capture weight (net 500kg) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"grossWeight\": 520.000,\n  \"tareWeight\": 20.000\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/weight", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "weight"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Grade delivery GRADE_A (confirms delivery) -> 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"grade\": \"GRADE_A\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/grade", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "grade"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('Delivery is CONFIRMED', () => pm.expect(pm.response.json().resultingStatus).to.eql('CONFIRMED'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Create pending delivery (not weighed/graded) -> 200",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"farmerId\": {{farmerId}},\n  \"productId\": {{settlementProductId}},\n  \"quantity\": 300.000,\n  \"deliveryDate\": \"2026-09-15\",\n  \"notes\": \"Not yet confirmed - used for settlement negative-state tests\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries", "host": ["{{baseUrl}}"], "path": ["api", "deliveries"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('pendingDeliveryId', pm.response.json().id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement preview -> 200",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/preview", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "preview"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('Resolved USD unit price 1.20', () => pm.expect(Number(b.unitPrice)).to.eql(1.20));",
+              "pm.test('Currency is USD', () => pm.expect(b.currency).to.eql('USD'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement preview (delivery not confirmed) -> 409",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{pendingDeliveryId}}/settlement/preview", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{pendingDeliveryId}}", "settlement", "preview"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement calculate (negative deduction) -> 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currency\": \"USD\",\n  \"commissionRate\": 5.00,\n  \"deductions\": [\n    { \"type\": \"TRANSPORT\", \"description\": \"Transport fee\", \"amount\": -20.00 }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/calculate", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "calculate"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement calculate (no auth) -> 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currency\": \"USD\",\n  \"commissionRate\": 5.00,\n  \"deductions\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/calculate", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "calculate"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement calculate (wrong role) -> 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{wrongRoleToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currency\": \"USD\",\n  \"commissionRate\": 5.00,\n  \"deductions\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/calculate", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "calculate"] },
+            "description": "Requires {{wrongRoleToken}} from 'Login (wrong role)'. INSPECTOR cannot calculate a settlement."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement calculate (USD, 5% commission + transport deduction) -> 200",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currency\": \"USD\",\n  \"commissionRate\": 5.00,\n  \"deductions\": [\n    { \"type\": \"TRANSPORT\", \"description\": \"Transport fee\", \"amount\": 20.00 }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/calculate", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "calculate"] },
+            "description": "Matches the Sprint 4 demo scenario: 500kg x $1.20 = $600 gross, 5% commission = $30, $20 transport deduction, net = $550."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('Gross amount is 600.00', () => pm.expect(Number(b.grossAmount)).to.eql(600.00));",
+              "pm.test('Commission amount is 30.00', () => pm.expect(Number(b.commissionAmount)).to.eql(30.00));",
+              "pm.test('Deductions total is 20.00', () => pm.expect(Number(b.deductionsTotal)).to.eql(20.00));",
+              "pm.test('Net amount is 550.00', () => pm.expect(Number(b.netAmount)).to.eql(550.00));",
+              "pm.collectionVariables.set('settlementId', b.settlementId);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement confirm (wrong role) -> 403",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{wrongRoleToken}}", "type": "string" }] },
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/confirm", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "confirm"] },
+            "description": "Requires {{wrongRoleToken}} from 'Login (wrong role)'. INSPECTOR cannot confirm a settlement."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement confirm -> 200",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/confirm", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "confirm"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('Status is CONFIRMED', () => pm.expect(b.status).to.eql('CONFIRMED'));",
+              "pm.test('confirmedAt is set', () => pm.expect(b.confirmedAt).to.not.be.null);",
+              "pm.collectionVariables.set('settlementId', b.id);"
+            ] } }
+          ]
+        },
+        {
+          "name": "Settlement confirm (repeated / idempotent) -> 200",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement/confirm", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement", "confirm"] },
+            "description": "Repeating a confirm request must return the existing confirmed settlement, not create a duplicate."
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('Same settlement id, no duplicate created', () => pm.expect(b.id).to.eql(Number(pm.collectionVariables.get('settlementId'))));",
+              "pm.test('Status is still CONFIRMED', () => pm.expect(b.status).to.eql('CONFIRMED'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Get settlement -> 200",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{deliveryId}}/settlement", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{deliveryId}}", "settlement"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Net amount is 550.00', () => pm.expect(Number(pm.response.json().netAmount)).to.eql(550.00));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Get settlement (not found) -> 404",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/deliveries/{{pendingDeliveryId}}/settlement", "host": ["{{baseUrl}}"], "path": ["api", "deliveries", "{{pendingDeliveryId}}", "settlement"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
             ] } }
           ]
         }

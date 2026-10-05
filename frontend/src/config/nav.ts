@@ -33,6 +33,9 @@ export const navItems: NavItem[] = [
 /** Human-readable page title for a given pathname (used in the header). */
 export function pageTitleForPath(pathname: string): string {
   if (pathname.startsWith('/farmers/')) return 'Farmer Details'
+  if (pathname.startsWith('/deliveries/new')) return 'New Delivery'
+  if (/^\/deliveries\/[^/]+\/settlement/.test(pathname)) return 'Settlement'
+  if (pathname.startsWith('/deliveries/')) return 'Delivery Details'
   if (pathname.startsWith('/settings/products/')) return 'Product Settings'
   if (pathname.startsWith('/settings/products')) return 'Products'
   const match = navItems.find((item) => pathname.startsWith(item.to))

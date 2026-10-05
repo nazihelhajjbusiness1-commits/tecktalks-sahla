@@ -8,11 +8,8 @@ import com.farmmanagement.backend.deliveries.settlement.FarmerSettlement;
  * failure here rolls back the confirmation rather than leaving a confirmed
  * settlement with no corresponding ledger entry.
  *
- * The real contract (payload shape, idempotency key, retry/failure handling,
- * whether this should instead be an async domain event) has not been agreed
- * with the ledger team yet. This interface is the seam to implement against
- * once that's settled; see {@link NoOpLedgerPostingService} for the current
- * placeholder.
+ * Implemented by {@code com.farmmanagement.backend.ledger.LedgerPostingServiceImpl},
+ * which posts exactly one idempotent SETTLEMENT_CREDIT to the farmer ledger.
  */
 public interface LedgerPostingService {
 

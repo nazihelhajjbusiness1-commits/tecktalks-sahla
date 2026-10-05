@@ -7,6 +7,9 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { FarmersPage } from '@/pages/farmers/FarmersPage'
 import { FarmerDetailPage } from '@/pages/farmers/FarmerDetailPage'
 import { DeliveriesPage } from '@/pages/deliveries/DeliveriesPage'
+import { NewDeliveryWizard } from '@/pages/deliveries/NewDeliveryWizard'
+import { DeliveryDetailPage } from '@/pages/deliveries/DeliveryDetailPage'
+import { SettlementPage } from '@/pages/deliveries/SettlementPage'
 import { InventoryPage } from '@/pages/inventory/InventoryPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
@@ -29,6 +32,9 @@ function App() {
               <Route path="/farmers" element={<FarmersPage />} />
               <Route path="/farmers/:id" element={<FarmerDetailPage />} />
               <Route path="/deliveries" element={<DeliveriesPage />} />
+              <Route path="/deliveries/new" element={<NewDeliveryWizard />} />
+              <Route path="/deliveries/:id" element={<DeliveryDetailPage />} />
+              <Route path="/deliveries/:id/settlement" element={<SettlementPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />

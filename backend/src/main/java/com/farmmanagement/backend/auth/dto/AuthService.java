@@ -20,15 +20,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService
+            JwtService jwtService,
+            LoginRateLimiter loginRateLimiter
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     public User register(RegisterRequest request) {
@@ -53,7 +56,9 @@ public class AuthService {
                 passwordEncoder.encode(request.getPassword())
         );
 
-        user.setRole(Role.WAREHOUSE_EMPLOYEE);
+        // Role selection is only reachable by an ADMIN (the endpoint is
+        // ADMIN-gated); default to the least-privileged role when unspecified.
+        user.setRole(request.getRole() != null ? request.getRole() : Role.WAREHOUSE_EMPLOYEE);
         user.setCreatedAt(LocalDateTime.now());
 
         return userRepository.save(user);
@@ -61,20 +66,29 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
+        String key = request.getEmail();
+
+        if (loginRateLimiter.isLocked(key)) {
+            throw new AuthenticationException(
+                    "Too many failed login attempts. Please try again later.");
+        }
+
         User user = userRepository
                 .findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new AuthenticationException("Invalid email or password")
-                );
+                .orElse(null);
 
-        boolean passwordMatches = passwordEncoder.matches(
+        boolean passwordMatches = user != null && passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword()
         );
 
         if (!passwordMatches) {
+            // Record for both unknown-email and wrong-password to avoid enumeration.
+            loginRateLimiter.recordFailure(key);
             throw new AuthenticationException("Invalid email or password");
         }
+
+        loginRateLimiter.reset(key);
 
         String token = jwtService.generateToken(
                 user.getEmail(),

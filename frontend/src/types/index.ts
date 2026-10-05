@@ -196,6 +196,237 @@ export interface Delivery {
 }
 
 /* ------------------------------------------------------------------ */
+/* Sprint 3 — Delivery intake (backend REST contracts)                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Backend delivery lifecycle, owned by Spring Boot. Distinct from the legacy
+ * lowercase `DeliveryStatus` above, which still backs the mock dashboard.
+ */
+export type IntakeStatus =
+  | 'PENDING'
+  | 'WEIGHED'
+  | 'GRADED'
+  | 'CONFIRMED'
+  | 'DELIVERED'
+  | 'REJECTED'
+  | 'CANCELLED'
+
+/** Mirrors the backend DeliveryResponse DTO. */
+export interface DeliveryResponse {
+  id: number
+  farmerCode: string
+  farmerName: string
+  productName: string
+  quantity: number
+  unit: string
+  deliveryDate: string // ISO date
+  createdBy: string | null
+  notes: string | null
+  status: IntakeStatus
+  totalPrice: number | null
+  totalPriceCurrency: Currency | null
+  createdAt: string // ISO date-time
+  updatedAt: string // ISO date-time
+}
+
+export interface CreateDeliveryRequest {
+  farmerId: number
+  productId: number
+  quantity: number
+  deliveryDate: string
+  notes?: string
+}
+
+export interface CaptureWeightRequest {
+  grossWeight: number
+  tareWeight: number
+}
+
+/** Mirrors the backend DeliveryWeightResponse DTO. */
+export interface DeliveryWeightResponse {
+  id: number
+  deliveryId: number
+  grossWeight: number
+  tareWeight: number
+  netWeight: number
+  unit: string
+  weighedBy: string | null
+  weighedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CaptureGradeRequest {
+  /** Grade code matching a product GradeDefinition, e.g. "GRADE_A". */
+  grade: string
+}
+
+/** Mirrors the backend DeliveryGradeResponse DTO. */
+export interface DeliveryGradeResponse {
+  id: number
+  deliveryId: number
+  gradeDefinitionId: number
+  gradeCode: string
+  gradeName: string
+  gradedBy: string | null
+  gradedAt: string
+  resultingStatus: IntakeStatus
+  totalPrice: number | null
+  totalPriceCurrency: Currency | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Mirrors the backend DeliveryAuditLogResponse DTO (DT-57). */
+export interface DeliveryAuditEntry {
+  id: number
+  action: string
+  previousStatus: string | null
+  newStatus: string
+  performedBy: string
+  notes: string | null
+  createdAt: string
+}
+
+/** Query params for the paginated + filtered delivery list endpoint. */
+export interface DeliveryListParams {
+  farmerId?: number
+  productId?: number
+  status?: IntakeStatus
+  from?: string
+  to?: string
+  page?: number
+  size?: number
+}
+
+/* ------------------------------------------------------------------ */
+/* Sprint 4 — Settlement, ledger & payments (backend REST contracts)   */
+/* ------------------------------------------------------------------ */
+
+export type SettlementStatus = 'DRAFT' | 'CALCULATED' | 'CONFIRMED' | 'VOIDED'
+export type DeductionType = 'TRANSPORT' | 'PACKAGING' | 'SERVICE_FEE' | 'OTHER'
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHECK' | 'OTHER'
+export type FarmerPaymentStatus = 'RECORDED' | 'REVERSED'
+
+/** POST /deliveries/{id}/settlement/preview */
+export interface SettlementPreview {
+  deliveryId: number
+  grade: string | null
+  acceptedWeight: number | null
+  unitPrice: number | null
+  currency: Currency | null
+  priceRuleId: number | null
+}
+
+export interface DeductionLine {
+  type: DeductionType
+  description: string
+  amount: number
+}
+
+/** POST /deliveries/{id}/settlement/calculate */
+export interface SettlementCalculationRequest {
+  currency: Currency
+  commissionRate: number
+  deductions: DeductionLine[]
+}
+
+export interface SettlementCalculation {
+  settlementId: number
+  deliveryId: number
+  grade: string | null
+  acceptedWeight: number
+  unitPrice: number
+  currency: Currency
+  grossAmount: number
+  commissionRate: number
+  commissionAmount: number
+  deductions: DeductionLine[]
+  deductionsTotal: number
+  netAmount: number
+  status: SettlementStatus
+  calculatedAt: string | null
+  sourcePriceRuleId: number | null
+}
+
+/** GET /deliveries/{id}/settlement — the stored FarmerSettlement. */
+export interface FarmerSettlement {
+  id: number
+  deliveryId: number
+  farmerId: number
+  unitPriceSnapshot: number | null
+  currency: Currency | null
+  acceptedWeightSnapshot: number | null
+  grossAmount: number | null
+  commissionAmount: number | null
+  deductionsTotal: number | null
+  netAmount: number | null
+  sourcePriceRuleId: number | null
+  status: SettlementStatus
+  calculatedAt: string | null
+  confirmedAt: string | null
+  confirmedBy: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CurrencyBalance {
+  currency: Currency
+  outstanding: number
+}
+
+export interface FarmerBalances {
+  farmerId: number
+  balances: CurrencyBalance[]
+}
+
+export interface OutstandingFarmer {
+  farmerId: number
+  farmerCode: string | null
+  farmerName: string | null
+  balances: CurrencyBalance[]
+}
+
+export interface StatementLine {
+  id: number
+  occurredAt: string
+  entryType: string
+  description: string | null
+  settlementId: number | null
+  paymentId: number | null
+  currency: Currency
+  debit: number | null
+  credit: number | null
+  runningBalance: number
+}
+
+export interface RecordPaymentRequest {
+  farmerId: number
+  amount: number
+  currency: Currency
+  paymentMethod: PaymentMethod
+  referenceNumber?: string
+  notes?: string
+  paidAt?: string
+}
+
+export interface FarmerPayment {
+  id: number
+  farmerId: number
+  amount: number
+  currency: Currency
+  paymentMethod: PaymentMethod
+  referenceNumber: string | null
+  notes: string | null
+  paidAt: string
+  recordedBy: string | null
+  status: FarmerPaymentStatus
+  createdAt: string
+  outstandingAfter: number | null
+}
+
+/* ------------------------------------------------------------------ */
 /* Inventory                                                           */
 /* ------------------------------------------------------------------ */
 

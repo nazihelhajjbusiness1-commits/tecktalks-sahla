@@ -11,7 +11,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # SQL logging is noisy and can leak data in production logs; enable it only
+    # in the `dev` profile (SPRING_PROFILES_ACTIVE=dev) when debugging locally.
+    show-sql: false
     properties:
       hibernate:
         format_sql: true

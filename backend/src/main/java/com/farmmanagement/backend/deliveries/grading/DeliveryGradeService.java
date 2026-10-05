@@ -116,6 +116,20 @@ public class DeliveryGradeService {
         return toResponse(saved, resultingStatus, totalPrice, totalPriceCurrency);
     }
 
+    /** Read the grade record captured for a delivery (DT-53 / details screen). */
+    public DeliveryGradeResponse getByDeliveryId(Long deliveryId) {
+        DeliveryGrade deliveryGrade = deliveryGradeRepository.findByDeliveryId(deliveryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No grade recorded for delivery " + deliveryId));
+        Delivery delivery = deliveryGrade.getDelivery();
+        return toResponse(
+                deliveryGrade,
+                delivery.getStatus(),
+                delivery.getTotalPrice(),
+                delivery.getTotalPriceCurrency()
+        );
+    }
+
     private DeliveryGradeResponse toResponse(
             DeliveryGrade deliveryGrade,
             DeliveryStatus resultingStatus,

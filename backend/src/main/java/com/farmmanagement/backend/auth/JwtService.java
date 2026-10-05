@@ -19,7 +19,7 @@ public class JwtService {
 
     public JwtService(
             @Value("${JWT_SECRET}") String secret,
-            @Value("${JWT_EXPIRATION}") long expiration
+            @Value("${JWT_EXPIRATION:86400000}") long expiration
     ) {
         this.key = Keys.hmacShaKeyFor(
                 secret.getBytes(StandardCharsets.UTF_8)

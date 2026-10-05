@@ -16,6 +16,9 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
 
     List<InventoryMovement> findAllByOrderByCreatedAtDesc();
 
+    /** Idempotency guard: one DELIVERY_IN movement per confirmed delivery (reference = "DELIVERY-{id}"). */
+    boolean existsByReferenceId(String referenceId);
+
     @Query("SELECT COALESCE(SUM(im.quantity), 0) FROM InventoryMovement im WHERE im.product.id = :productId")
     BigDecimal calculateBalanceByProductId(@Param("productId") Long productId);
 

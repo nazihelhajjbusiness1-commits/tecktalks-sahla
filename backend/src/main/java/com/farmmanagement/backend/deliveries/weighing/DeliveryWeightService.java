@@ -78,6 +78,14 @@ public class DeliveryWeightService {
         return toResponse(saved);
     }
 
+    /** Read the weight record captured for a delivery (DT-52 / details screen). */
+    public DeliveryWeightResponse getByDeliveryId(Long deliveryId) {
+        DeliveryWeight deliveryWeight = deliveryWeightRepository.findByDeliveryId(deliveryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No weight recorded for delivery " + deliveryId));
+        return toResponse(deliveryWeight);
+    }
+
     private DeliveryWeightResponse toResponse(DeliveryWeight deliveryWeight) {
 
         DeliveryWeightResponse response = new DeliveryWeightResponse();

@@ -31,12 +31,25 @@ missing — and what this new class adds — is **HTTP/security-layer** coverage
 role-based access control (403 for INSPECTOR, 401 for unauthenticated) on
 preview/calculate/confirm, and the actual REST status/error-body contracts.
 
-Compiles cleanly (`./mvnw -o test-compile`). **Could not be executed** in this
-environment — Docker Desktop was not running and wouldn't start, and the tests
-require a real Postgres container via Testcontainers. Run
-`./mvnw test -Dtest=SettlementControllerIntegrationTest` in the shared Docker
-environment before merging, per the Sprint 4 working rule that nothing is Done
-without verification there.
+Compiled cleanly right after this branch was created. **Still not verified against
+a real database.** Once Docker was available and the branch was rebased onto the
+latest `develop` (2026-10-09), the backend stopped compiling at all — not because
+of anything in this branch, but because `develop` itself is currently broken.
+
+Verified from a clean detached checkout of `origin/develop` (not just this
+branch): PR #13 (`Sprint-3-aman-sarawan`) left behind stray/duplicate files from a
+bad merge:
+- `backend/.../deliveries/Delivery-Service.java` — invalid filename (hyphen),
+  contains a second `DeliveryService` class that conflicts with the real one.
+- `backend/.../auth/dto/DeliveryController.java` and `.../auth/dto/DeliveryService.java`
+  — old misplaced copies referencing packages (`backend.model.Delivery`,
+  `backend.repository.DeliveryRepository`) that don't exist anymore.
+- `backend/.../model/InventoryMovement.java` — duplicate of
+  `.../inventory/InventoryMovement.java`, referencing non-existent classes.
+
+Nobody can build the backend off `develop` right now. Not fixing this here per
+instruction — it's outside this task's scope and belongs to whoever owns PR #13.
+`SettlementControllerIntegrationTest` can't be run until that's fixed upstream.
 
 ## Blocked
 

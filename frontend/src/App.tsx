@@ -14,6 +14,7 @@ import { InventoryPage } from '@/pages/inventory/InventoryPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { UsersSettingsPage } from '@/pages/settings/UsersSettingsPage'
 import { ProductsSettingsPage } from '@/pages/settings/ProductsSettingsPage'
 import { ProductSettingsDetailPage } from '@/pages/settings/ProductSettingsDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -39,6 +40,7 @@ function App() {
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/users" element={<UsersSettingsPage />} />
               <Route path="/settings/products" element={<ProductsSettingsPage />} />
               <Route
                 path="/settings/products/:id"

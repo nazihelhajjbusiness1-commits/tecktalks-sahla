@@ -6,9 +6,6 @@ import {
   Wallet,
   Boxes,
   ArrowRight,
-  CircleDollarSign,
-  CircleDashed,
-  Clock,
 } from 'lucide-react'
 import {
   Card,
@@ -16,8 +13,9 @@ import {
   StatCard,
   Table,
   Button,
-  DeliveryStatusBadge,
-  GradeBadge,
+  Alert,
+  EmptyState,
+  IntakeStatusBadge,
   type Column,
 } from '@/components/common'
 import { useAsync } from '@/hooks/useAsync'
@@ -25,32 +23,48 @@ import { dashboardService } from '@/services/dashboardService'
 import { useAuth } from '@/hooks/useAuth'
 import {
   formatCurrency,
+  formatDate,
+  formatMoney,
   formatNumber,
   formatWeight,
 } from '@/utils/format'
-import type { Delivery, InventorySummaryRow } from '@/types'
+import type {
+  Currency,
+  DashboardRecentDelivery,
+  DashboardRecentPayment,
+  IntakeStatus,
+} from '@/types'
+
+/** Picks the amount owed in a given currency (0 when the farmer owes nothing). */
+function owedIn(
+  rows: { currency: Currency; amount: number }[] | undefined,
+  currency: Currency,
+): number {
+  return rows?.find((r) => r.currency === currency)?.amount ?? 0
+}
 
 export function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { data, loading } = useAsync(() => dashboardService.load())
+  const { data, loading, error } = useAsync(() => dashboardService.load())
 
-  const deliveryColumns: Column<Delivery>[] = [
-    { header: 'Farmer', cell: (d) => <span className="font-medium">{d.farmerName}</span> },
-    { header: 'Product', cell: (d) => d.product },
-    { header: 'Weight', align: 'end', cell: (d) => formatWeight(d.netWeight) },
-    { header: 'Grade', align: 'center', cell: (d) => <GradeBadge grade={d.grade} /> },
-    { header: 'Status', cell: (d) => <DeliveryStatusBadge status={d.status} /> },
+  const deliveryColumns: Column<DashboardRecentDelivery>[] = [
+    {
+      header: 'Farmer',
+      cell: (d) => <span className="font-medium">{d.farmerName ?? '—'}</span>,
+    },
+    { header: 'Product', cell: (d) => d.productName ?? '—' },
+    {
+      header: 'Weight',
+      align: 'end',
+      cell: (d) => `${formatNumber(d.quantity)} ${d.unit}`,
+    },
+    {
+      header: 'Status',
+      cell: (d) => <IntakeStatusBadge status={d.status as IntakeStatus} />,
+    },
+    { header: 'Date', align: 'end', cell: (d) => formatDate(d.deliveryDate) },
   ]
-
-  const maxInventory =
-    data?.inventorySummary.reduce((m, r) => Math.max(m, r.quantityKg), 0) ?? 0
-
-  const paymentsTotal = data
-    ? data.paymentsBreakdown.paid +
-      data.paymentsBreakdown.partial +
-      data.paymentsBreakdown.pending
-    : 0
 
   return (
     <div className="space-y-6">
@@ -63,39 +77,47 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Summary cards */}
+      {error && (
+        <Alert variant="danger" title="Couldn't load dashboard">
+          {error}
+        </Alert>
+      )}
+
+      {/* Summary cards — all values come from the backend, never hardcoded. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           label="Today's Deliveries"
-          value={loading ? '—' : formatNumber(data!.stats.todaysDeliveries)}
+          value={loading || !data ? '—' : formatNumber(data.todaysDeliveries)}
           icon={Truck}
           tone="primary"
-          trend={{ value: '+4', direction: 'up' }}
-          caption="vs yesterday"
         />
         <StatCard
           label="Produce Received"
-          value={loading ? '—' : formatWeight(data!.stats.produceReceivedKg)}
+          value={loading || !data ? '—' : formatWeight(data.produceReceivedTodayKg)}
           icon={Scale}
           tone="info"
           caption="today"
         />
         <StatCard
           label="Active Farmers"
-          value={loading ? '—' : formatNumber(data!.stats.activeFarmers)}
+          value={loading || !data ? '—' : formatNumber(data.activeFarmers)}
           icon={Users}
           tone="success"
         />
         <StatCard
-          label="Payments Due"
-          value={loading ? '—' : formatCurrency(data!.stats.paymentsDueUsd)}
+          label="Owed to Farmers"
+          value={
+            loading || !data
+              ? '—'
+              : formatCurrency(owedIn(data.amountOwedToFarmers, 'USD'))
+          }
           icon={Wallet}
           tone="accent"
-          caption="outstanding"
+          caption="outstanding (USD)"
         />
         <StatCard
           label="Inventory"
-          value={loading ? '—' : formatWeight(data!.stats.inventoryKg)}
+          value={loading || !data ? '—' : formatWeight(data.currentInventoryKg)}
           icon={Boxes}
           tone="neutral"
           caption="in stock"
@@ -122,141 +144,60 @@ export function DashboardPage() {
           <Table
             columns={deliveryColumns}
             rows={data?.recentDeliveries ?? []}
-            rowKey={(d) => d.id}
+            rowKey={(d) => String(d.id)}
             loading={loading}
-            onRowClick={() => navigate('/deliveries')}
+            empty={
+              <EmptyState
+                icon={Truck}
+                title="No deliveries yet"
+                description="Recorded deliveries will show here."
+              />
+            }
           />
         </Card>
 
-        {/* Payments overview */}
+        {/* Recent payments */}
         <Card flush>
-          <CardHeader
-            title="Payments Overview"
-            description="Farmer payment status"
-          />
-          <div className="space-y-4 p-5">
-            {data && (
-              <>
-                <PaymentBar
-                  label="Paid"
-                  count={data.paymentsBreakdown.paid}
-                  total={paymentsTotal}
-                  icon={CircleDollarSign}
-                  barClass="bg-success"
-                  tintClass="text-success"
-                />
-                <PaymentBar
-                  label="Partially Paid"
-                  count={data.paymentsBreakdown.partial}
-                  total={paymentsTotal}
-                  icon={CircleDashed}
-                  barClass="bg-warning"
-                  tintClass="text-warning"
-                />
-                <PaymentBar
-                  label="Pending"
-                  count={data.paymentsBreakdown.pending}
-                  total={paymentsTotal}
-                  icon={Clock}
-                  barClass="bg-neutral-status"
-                  tintClass="text-neutral-status"
-                />
-              </>
+          <CardHeader title="Recent Payments" description="Latest payments to farmers" />
+          <div className="p-5">
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : data && data.recentPayments.length > 0 ? (
+              <ul className="divide-y divide-border">
+                {data.recentPayments.map((p: DashboardRecentPayment) => (
+                  <li key={p.id} className="flex items-center justify-between py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {p.farmerName ?? '—'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(p.paidAt)}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatMoney(p.amount, p.currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={Wallet}
+                title="No payments yet"
+                description="Payments to farmers will appear here."
+              />
             )}
             <Button
               variant="outline"
               block
               icon={Wallet}
+              className="mt-4"
               onClick={() => navigate('/payments')}
             >
               Go to Payments
             </Button>
           </div>
         </Card>
-      </div>
-
-      {/* Inventory overview */}
-      <Card flush>
-        <CardHeader
-          title="Inventory Overview"
-          description="Top stock on hand by product and grade"
-          action={
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={ArrowRight}
-              onClick={() => navigate('/inventory')}
-            >
-              View all
-            </Button>
-          }
-        />
-        <div className="grid grid-cols-1 gap-x-8 gap-y-4 p-5 sm:grid-cols-2">
-          {data?.inventorySummary.map((row) => (
-            <InventoryRow key={row.label} row={row} max={maxInventory} />
-          ))}
-        </div>
-      </Card>
-    </div>
-  )
-}
-
-function PaymentBar({
-  label,
-  count,
-  total,
-  icon: Icon,
-  barClass,
-  tintClass,
-}: {
-  label: string
-  count: number
-  total: number
-  icon: typeof Clock
-  barClass: string
-  tintClass: string
-}) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="flex items-center gap-2 font-medium text-foreground">
-          <Icon className={`h-4 w-4 ${tintClass}`} aria-hidden="true" />
-          {label}
-        </span>
-        <span className="text-muted-foreground">
-          {count} · {pct}%
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full rounded-full ${barClass}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function InventoryRow({
-  row,
-  max,
-}: {
-  row: InventorySummaryRow
-  max: number
-}) {
-  const pct = max > 0 ? Math.round((row.quantityKg / max) * 100) : 0
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="font-medium text-foreground">{row.label}</span>
-        <span className="text-muted-foreground">{formatWeight(row.quantityKg)}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary/80"
-          style={{ width: `${pct}%` }}
-        />
       </div>
     </div>
   )

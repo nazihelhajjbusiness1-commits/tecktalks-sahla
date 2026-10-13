@@ -5,6 +5,7 @@ import com.farmmanagement.backend.auth.dto.LoginRequest;
 import com.farmmanagement.backend.auth.dto.RegisterRequest;
 import com.farmmanagement.backend.common.exception.AuthenticationException;
 import com.farmmanagement.backend.common.exception.ConflictException;
+import com.farmmanagement.backend.common.exception.RateLimitedException;
 import com.farmmanagement.backend.users.User;
 import com.farmmanagement.backend.users.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,17 +22,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final LoginRateLimiter loginRateLimiter;
+    private final TokenDenylist tokenDenylist;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            LoginRateLimiter loginRateLimiter
+            LoginRateLimiter loginRateLimiter,
+            TokenDenylist tokenDenylist
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.loginRateLimiter = loginRateLimiter;
+        this.tokenDenylist = tokenDenylist;
     }
 
     public User register(RegisterRequest request) {
@@ -69,8 +73,9 @@ public class AuthService {
         String key = request.getEmail();
 
         if (loginRateLimiter.isLocked(key)) {
-            throw new AuthenticationException(
-                    "Too many failed login attempts. Please try again later.");
+            throw new RateLimitedException(
+                    "Too many failed login attempts. Please try again later.",
+                    loginRateLimiter.secondsUntilUnlock(key));
         }
 
         User user = userRepository
@@ -85,17 +90,48 @@ public class AuthService {
         if (!passwordMatches) {
             // Record for both unknown-email and wrong-password to avoid enumeration.
             loginRateLimiter.recordFailure(key);
+            // A failure may have just crossed the lockout threshold.
+            if (loginRateLimiter.isLocked(key)) {
+                throw new RateLimitedException(
+                        "Too many failed login attempts. Please try again later.",
+                        loginRateLimiter.secondsUntilUnlock(key));
+            }
             throw new AuthenticationException("Invalid email or password");
         }
 
         loginRateLimiter.reset(key);
 
-        String token = jwtService.generateToken(
-                user.getEmail(),
-                user.getRole()
-        );
+        return issueTokens(user);
+    }
 
-        return new AuthResponse(token);
+    /** Exchange a valid refresh token for a fresh access token (keeps same refresh token). */
+    public AuthResponse refresh(String refreshToken) {
+        if (refreshToken == null
+                || !jwtService.isTokenValid(refreshToken)
+                || !JwtService.TYPE_REFRESH.equals(jwtService.extractType(refreshToken))
+                || tokenDenylist.isRevoked(jwtService.extractJti(refreshToken))) {
+            throw new AuthenticationException("Invalid or expired refresh token");
+        }
+
+        User user = userRepository
+                .findByEmail(jwtService.extractEmail(refreshToken))
+                .orElseThrow(() -> new AuthenticationException("Invalid or expired refresh token"));
+
+        String access = jwtService.generateAccessToken(user.getEmail(), user.getRole());
+        return new AuthResponse(access, refreshToken);
+    }
+
+    /** Invalidate a token (access or refresh) for its remaining lifetime. */
+    public void logout(String token) {
+        if (token != null && jwtService.isTokenValid(token)) {
+            tokenDenylist.revoke(jwtService.extractJti(token), jwtService.millisUntilExpiry(token));
+        }
+    }
+
+    private AuthResponse issueTokens(User user) {
+        String access = jwtService.generateAccessToken(user.getEmail(), user.getRole());
+        String refresh = jwtService.generateRefreshToken(user.getEmail(), user.getRole());
+        return new AuthResponse(access, refresh);
     }
 
     public User getCurrentUser(String email) {
@@ -106,5 +142,9 @@ public class AuthService {
                 );
     }
 
-
+    /** DT-84/Create-Account: list all users for the admin user-management screen. */
+    public java.util.List<User> listUsers() {
+        return userRepository.findAll(
+                org.springframework.data.domain.Sort.by("createdAt").descending());
+    }
 }

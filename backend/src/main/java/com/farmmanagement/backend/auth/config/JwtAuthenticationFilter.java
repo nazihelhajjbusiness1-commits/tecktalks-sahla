@@ -1,7 +1,7 @@
 package com.farmmanagement.backend.auth.config;
 
 import com.farmmanagement.backend.auth.JwtService;
-import com.farmmanagement.backend.auth.Role;
+import com.farmmanagement.backend.auth.TokenDenylist;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +19,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final TokenDenylist tokenDenylist;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, TokenDenylist tokenDenylist) {
         this.jwtService = jwtService;
+        this.tokenDenylist = tokenDenylist;
     }
 
     @Override
@@ -41,6 +43,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         if (!jwtService.isTokenValid(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Only access tokens authenticate requests; refresh tokens are for
+        // /api/auth/refresh only. Revoked (logged-out) tokens are rejected.
+        if (!JwtService.TYPE_ACCESS.equals(jwtService.extractType(token))
+                || tokenDenylist.isRevoked(jwtService.extractJti(token))) {
             filterChain.doFilter(request, response);
             return;
         }

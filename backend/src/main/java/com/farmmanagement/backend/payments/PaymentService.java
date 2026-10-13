@@ -1,5 +1,6 @@
 package com.farmmanagement.backend.payments;
 
+import com.farmmanagement.backend.audit.AuditService;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
 import com.farmmanagement.backend.common.exception.ValidationException;
 import com.farmmanagement.backend.farmers.FarmerRepository;
@@ -37,17 +38,20 @@ public class PaymentService {
     private final LedgerService ledgerService;
     private final FarmerRepository farmerRepository;
     private final UserService userService;
+    private final AuditService auditService;
 
     public PaymentService(
             FarmerPaymentRepository paymentRepository,
             LedgerService ledgerService,
             FarmerRepository farmerRepository,
-            UserService userService
+            UserService userService,
+            AuditService auditService
     ) {
         this.paymentRepository = paymentRepository;
         this.ledgerService = ledgerService;
         this.farmerRepository = farmerRepository;
         this.userService = userService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -94,6 +98,16 @@ public class PaymentService {
                 saved.getPaidAt(),
                 recordedByUserId
         );
+
+        auditService.record(
+                "PAYMENT",
+                saved.getId(),
+                "RECORD",
+                null,
+                saved.getAmount() + " " + currency,
+                userService.getUserById(recordedByUserId).getUsername(),
+                "Payment to farmer " + saved.getFarmerId()
+                        + " via " + saved.getPaymentMethod());
 
         BigDecimal outstandingAfter = outstanding.subtract(saved.getAmount());
         return PaymentResponse.from(saved, userName(recordedByUserId, new HashMap<>()), outstandingAfter);

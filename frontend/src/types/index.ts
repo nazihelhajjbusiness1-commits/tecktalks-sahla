@@ -37,6 +37,38 @@ export interface AuthSession {
   token: string
 }
 
+/** Backend Role enum values (used by the admin user-management screen). */
+export type BackendRole =
+  | 'ADMIN'
+  | 'MANAGER'
+  | 'RECEIVING_EMPLOYEE'
+  | 'ACCOUNTANT'
+  | 'WAREHOUSE_EMPLOYEE'
+  | 'INSPECTOR'
+
+/** Mirrors the backend UserResponse DTO. */
+export interface StaffUser {
+  id: number
+  firstname: string
+  lastname: string
+  username: string
+  email: string
+  phoneNumber?: string | null
+  role: BackendRole
+  createdAt: string
+}
+
+/** Mirrors the backend RegisterRequest DTO (admin creates staff accounts). */
+export interface CreateStaffUserRequest {
+  firstname: string
+  lastname: string
+  username: string
+  email: string
+  phoneNumber?: string
+  password: string
+  role: BackendRole
+}
+
 /* ------------------------------------------------------------------ */
 /* Products & grading                                                  */
 /* ------------------------------------------------------------------ */
@@ -481,6 +513,88 @@ export interface PaymentsBreakdown {
   paid: number
   partial: number
   pending: number
+}
+
+/** A money amount tagged with its currency (USD/LBP never combined). */
+export interface DashboardCurrencyAmount {
+  currency: Currency
+  amount: number
+}
+
+export interface DashboardRecentDelivery {
+  id: number
+  farmerName: string | null
+  productName: string | null
+  quantity: number
+  unit: string
+  status: string
+  deliveryDate: string
+}
+
+export interface DashboardRecentPayment {
+  id: number
+  farmerName: string | null
+  amount: number
+  currency: Currency
+  paidAt: string
+}
+
+/** Mirrors the backend DashboardStatsResponse DTO (DT-82). */
+export interface DashboardData {
+  todaysDeliveries: number
+  produceReceivedTodayKg: number
+  activeFarmers: number
+  currentInventoryKg: number
+  amountOwedToFarmers: DashboardCurrencyAmount[]
+  paymentsToday: DashboardCurrencyAmount[]
+  recentDeliveries: DashboardRecentDelivery[]
+  recentPayments: DashboardRecentPayment[]
+}
+
+/* ------------------------------------------------------------------ */
+/* Reports (Sprint 5, DT-83/87)                                        */
+/* ------------------------------------------------------------------ */
+
+/** Mirrors the backend DailyCollectionRow DTO. */
+export interface DailyCollectionRow {
+  deliveryDate: string
+  farmerId: number
+  farmerCode: string | null
+  farmerName: string | null
+  productId: number
+  productName: string | null
+  gradeId: number | null
+  gradeCode: string | null
+  gradeName: string | null
+  netWeight: number
+  unit: string
+  unitPrice: number
+  deliveryValue: number
+  currency: Currency
+}
+
+/** Mirrors the backend InventoryReportRow DTO. */
+export interface InventoryReportRow {
+  productId: number
+  productName: string | null
+  gradeId: number | null
+  gradeCode: string | null
+  gradeName: string | null
+  quantity: number
+  unit: string
+}
+
+/** Mirrors the backend OutstandingPaymentsRow DTO. */
+export interface OutstandingPaymentsRow {
+  farmerId: number
+  farmerCode: string | null
+  farmerName: string | null
+  currency: Currency
+  amountOwed: number
+  amountPaid: number
+  remaining: number
+  lastPaymentAt: string | null
+  lastPaymentAmount: number | null
 }
 
 /* ------------------------------------------------------------------ */

@@ -86,6 +86,24 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ---- 429: login rate-limit lockout (brute-force protection) ----
+
+    @ExceptionHandler(RateLimitedException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimited(
+            RateLimitedException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(exception.getRetryAfterSeconds()))
+                .body(new ErrorResponse(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        "Too Many Requests",
+                        exception.getMessage(),
+                        request.getRequestURI()
+                ));
+    }
+
     // ---- 403: authorization failures (e.g. @PreAuthorize inside a controller) ----
 
     @ExceptionHandler(AccessDeniedException.class)

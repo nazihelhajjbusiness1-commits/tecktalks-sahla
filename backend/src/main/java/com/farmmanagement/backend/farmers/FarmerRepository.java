@@ -16,4 +16,7 @@ public interface FarmerRepository extends JpaRepository<Farmer, Long> {
 
     boolean existsByFarmerCode(String farmerCode);
 
+    /** DT-82: active-farmer count for the dashboard (DB count, no load). */
+    long countByStatus(Farmer.FarmerStatus status);
+
 }

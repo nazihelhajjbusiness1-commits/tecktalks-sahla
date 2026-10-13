@@ -4,6 +4,7 @@ import { brand } from '@/config/brand'
 import { USE_MOCKS, mockDelay, request, setToken } from './api'
 
 const SESSION_KEY = 'sahla.user'
+const REFRESH_KEY = 'sahla.refresh'
 
 /** Backend Role enum -> frontend role code. */
 const roleMap: Record<string, UserRole> = {
@@ -71,7 +72,7 @@ export const authService = {
       return session
     }
 
-    const loginRes = await request<ApiEnvelope<{ token: string }>>(
+    const loginRes = await request<ApiEnvelope<{ token: string; refreshToken?: string }>>(
       '/auth/login',
       {
         method: 'POST',
@@ -80,6 +81,9 @@ export const authService = {
     )
     const token = loginRes.data.token
     setToken(token)
+    if (loginRes.data.refreshToken) {
+      localStorage.setItem(REFRESH_KEY, loginRes.data.refreshToken)
+    }
 
     const meRes = await request<ApiEnvelope<BackendUser>>('/auth/me')
     const user = mapUser(meRes.data)
@@ -88,8 +92,14 @@ export const authService = {
   },
 
   logout(): void {
+    // Best-effort server-side revocation of the current access token; the
+    // local session is cleared regardless of whether the call succeeds.
+    if (!USE_MOCKS) {
+      void request('/auth/logout', { method: 'POST' }).catch(() => {})
+    }
     setToken(null)
     localStorage.removeItem(SESSION_KEY)
+    localStorage.removeItem(REFRESH_KEY)
   },
 
   /** Restore the persisted user on app load (mock or real token flow). */

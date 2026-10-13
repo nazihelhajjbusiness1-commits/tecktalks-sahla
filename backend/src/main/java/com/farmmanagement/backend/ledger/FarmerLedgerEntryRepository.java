@@ -36,4 +36,31 @@ public interface FarmerLedgerEntryRepository extends JpaRepository<FarmerLedgerE
             HAVING SUM(e.amount * e.direction) > 0
             """)
     List<FarmerCurrencyBalance> outstandingBalances();
+
+    /** DT-82: total amount owed to all farmers, per currency (dashboard tile). */
+    @Query("""
+            SELECT new com.farmmanagement.backend.dashboard.dto.CurrencyAmount(
+                e.currency, SUM(e.amount * e.direction))
+            FROM FarmerLedgerEntry e
+            GROUP BY e.currency
+            HAVING SUM(e.amount * e.direction) > 0
+            """)
+    List<com.farmmanagement.backend.dashboard.dto.CurrencyAmount> totalOutstandingByCurrency();
+
+    /**
+     * DT-83 Outstanding Payments report. Per farmer+currency: total credited
+     * (owed), total debited (paid) and the remaining balance — only rows that
+     * still owe money. Single grouped query, no in-memory scan.
+     */
+    @Query("""
+            SELECT new com.farmmanagement.backend.reports.dto.OutstandingPaymentsAggregate(
+                e.farmerId, e.currency,
+                SUM(CASE WHEN e.direction > 0 THEN e.amount ELSE 0 END),
+                SUM(CASE WHEN e.direction < 0 THEN e.amount ELSE 0 END),
+                SUM(e.amount * e.direction))
+            FROM FarmerLedgerEntry e
+            GROUP BY e.farmerId, e.currency
+            HAVING SUM(e.amount * e.direction) > 0
+            """)
+    List<com.farmmanagement.backend.reports.dto.OutstandingPaymentsAggregate> outstandingPaymentsAggregate();
 }

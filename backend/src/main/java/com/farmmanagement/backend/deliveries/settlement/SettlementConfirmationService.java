@@ -1,5 +1,6 @@
 package com.farmmanagement.backend.deliveries.settlement;
 
+import com.farmmanagement.backend.audit.AuditService;
 import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
 import com.farmmanagement.backend.deliveries.Delivery;
@@ -22,17 +23,20 @@ public class SettlementConfirmationService {
     private final DeliveryRepository deliveryRepository;
     private final UserService userService;
     private final LedgerPostingService ledgerPostingService;
+    private final AuditService auditService;
 
     public SettlementConfirmationService(
             FarmerSettlementRepository farmerSettlementRepository,
             DeliveryRepository deliveryRepository,
             UserService userService,
-            LedgerPostingService ledgerPostingService
+            LedgerPostingService ledgerPostingService,
+            AuditService auditService
     ) {
         this.farmerSettlementRepository = farmerSettlementRepository;
         this.deliveryRepository = deliveryRepository;
         this.userService = userService;
         this.ledgerPostingService = ledgerPostingService;
+        this.auditService = auditService;
     }
 
     public FarmerSettlementResponse confirm(Long deliveryId, Long confirmedByUserId) {
@@ -83,6 +87,16 @@ public class SettlementConfirmationService {
         FarmerSettlement savedSettlement = farmerSettlementRepository.save(settlement);
 
         ledgerPostingService.postConfirmedSettlement(savedSettlement);
+
+        auditService.record(
+                "SETTLEMENT",
+                savedSettlement.getId(),
+                "CONFIRM",
+                SettlementStatus.CALCULATED.name(),
+                SettlementStatus.CONFIRMED.name(),
+                confirmedBy.getUsername(),
+                "Net " + savedSettlement.getNetAmount() + " " + savedSettlement.getCurrency()
+                        + " for delivery " + deliveryId);
 
         return FarmerSettlementMapper.toResponse(savedSettlement);
     }

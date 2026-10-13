@@ -140,6 +140,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login",
+                                "/api/auth/refresh",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
@@ -217,6 +218,26 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.PUT, "/api/prices/**")
                         .hasAnyRole("ADMIN", "MANAGER")
+
+                        // DT-82/83/87/88 (Sprint 5): management reporting surface.
+                        // URL layer gates coarsely; each controller's @PreAuthorize
+                        // refines per endpoint.
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard")
+                        .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+
+                        .requestMatchers(HttpMethod.GET, "/api/reports/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "WAREHOUSE_EMPLOYEE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/audit/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+
+                        // Admin-only user listing (login stays public above).
+                        .requestMatchers(HttpMethod.GET, "/api/auth/users")
+                        .hasRole("ADMIN")
+
+                        // Inventory reads: warehouse + management/accounting roles.
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "WAREHOUSE_EMPLOYEE", "ACCOUNTANT")
 
                         .anyRequest().authenticated()
                 )

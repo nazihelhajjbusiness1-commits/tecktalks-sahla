@@ -40,6 +40,21 @@ public class LoginRateLimiter {
         }
     }
 
+    /** Seconds until the lock expires, for the 429 Retry-After header (0 if unlocked). */
+    public long secondsUntilUnlock(String key) {
+        Attempts a = attempts.get(normalize(key));
+        if (a == null) {
+            return 0;
+        }
+        synchronized (a) {
+            if (a.lockedUntil == null) {
+                return 0;
+            }
+            long seconds = Duration.between(Instant.now(), a.lockedUntil).getSeconds();
+            return Math.max(seconds, 0);
+        }
+    }
+
     public void recordFailure(String key) {
         Attempts a = attempts.computeIfAbsent(normalize(key), k -> new Attempts());
         synchronized (a) {

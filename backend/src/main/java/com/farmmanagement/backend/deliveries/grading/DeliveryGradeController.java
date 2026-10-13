@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,5 +37,11 @@ public class DeliveryGradeController {
         Long gradedByUserId = userService.getUserByEmail(authentication.getName()).getId();
         DeliveryGradeResponse response = deliveryGradeService.gradeDelivery(deliveryId, request, gradedByUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{deliveryId}/grade")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEIVING_EMPLOYEE', 'ACCOUNTANT', 'WAREHOUSE_EMPLOYEE', 'INSPECTOR')")
+    public ResponseEntity<DeliveryGradeResponse> getGrade(@PathVariable Long deliveryId) {
+        return ResponseEntity.ok(deliveryGradeService.getByDeliveryId(deliveryId));
     }
 }

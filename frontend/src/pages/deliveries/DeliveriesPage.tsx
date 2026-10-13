@@ -1,69 +1,94 @@
-import { useMemo, useState } from 'react'
-import { Plus, Truck, ArrowRight } from 'lucide-react'
+import { useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Plus, Truck, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   PageHeader,
   Card,
   Button,
-  SearchInput,
   Select,
   Table,
-  DeliveryStatusBadge,
-  GradeBadge,
+  IntakeStatusBadge,
   EmptyState,
-  Modal,
   Alert,
   type Column,
 } from '@/components/common'
 import { useAsync } from '@/hooks/useAsync'
 import { deliveryService } from '@/services/deliveryService'
-import { products } from '@/services/mockData'
-import { formatDate, formatWeight } from '@/utils/format'
-import type { Delivery, DeliveryStatus } from '@/types'
+import { farmerService } from '@/services/farmerService'
+import { productService } from '@/services/productService'
+import { formatDate, formatNumber } from '@/utils/format'
+import type { DeliveryResponse, IntakeStatus } from '@/types'
 
-const statusOptions: { label: string; value: DeliveryStatus }[] = [
-  { label: 'Draft', value: 'draft' },
-  { label: 'Weighed', value: 'weighed' },
-  { label: 'Grading', value: 'grading' },
-  { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Rejected', value: 'rejected' },
+const statusOptions: { label: string; value: IntakeStatus }[] = [
+  { label: 'Pending', value: 'PENDING' },
+  { label: 'Weighed', value: 'WEIGHED' },
+  { label: 'Graded', value: 'GRADED' },
+  { label: 'Confirmed', value: 'CONFIRMED' },
+  { label: 'Delivered', value: 'DELIVERED' },
+  { label: 'Rejected', value: 'REJECTED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
 ]
 
 export function DeliveriesPage() {
-  const { data, loading } = useAsync(() => deliveryService.list())
-  const [query, setQuery] = useState('')
-  const [product, setProduct] = useState('')
-  const [status, setStatus] = useState('')
-  const [date, setDate] = useState('')
-  const [wizardOpen, setWizardOpen] = useState(false)
+  const navigate = useNavigate()
+  // Filters live in the URL so refreshing / sharing a link keeps the view.
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const deliveries = useMemo(() => data ?? [], [data])
+  const farmerId = searchParams.get('farmerId') ?? ''
+  const productId = searchParams.get('productId') ?? ''
+  const status = searchParams.get('status') ?? ''
+  const from = searchParams.get('from') ?? ''
+  const to = searchParams.get('to') ?? ''
+  const page = Number(searchParams.get('page') ?? '0')
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return deliveries.filter((d) => {
-      const matchesQuery =
-        !q ||
-        d.id.toLowerCase().includes(q) ||
-        d.farmerName.toLowerCase().includes(q)
-      const matchesProduct = !product || d.product === product
-      const matchesStatus = !status || d.status === status
-      const matchesDate = !date || d.date === date
-      return matchesQuery && matchesProduct && matchesStatus && matchesDate
+  function setParam(key: string, value: string) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value) next.set(key, value)
+      else next.delete(key)
+      // Any filter change resets to the first page.
+      if (key !== 'page') next.delete('page')
+      return next
     })
-  }, [deliveries, query, product, status, date])
+  }
 
-  const columns: Column<Delivery>[] = [
+  const { data: farmersPage } = useAsync(() => farmerService.list({ size: 100 }), [])
+  const { data: productsPage } = useAsync(() => productService.list({ size: 100 }), [])
+
+  const { data, loading, error } = useAsync(
+    () =>
+      deliveryService.list({
+        farmerId: farmerId ? Number(farmerId) : undefined,
+        productId: productId ? Number(productId) : undefined,
+        status: (status || undefined) as IntakeStatus | undefined,
+        from: from || undefined,
+        to: to || undefined,
+        page,
+        size: 20,
+      }),
+    [farmerId, productId, status, from, to, page],
+  )
+
+  const deliveries = useMemo(() => data?.content ?? [], [data])
+
+  const columns: Column<DeliveryResponse>[] = [
     {
-      header: 'Delivery ID',
-      cell: (d) => <span className="font-mono text-xs text-muted-foreground">{d.id}</span>,
+      header: 'Delivery',
+      cell: (d) => <span className="font-mono text-xs text-muted-foreground">#{d.id}</span>,
     },
     { header: 'Farmer', cell: (d) => <span className="font-medium">{d.farmerName}</span> },
-    { header: 'Product', className: 'hidden sm:table-cell', cell: (d) => d.product },
-    { header: 'Net Weight', align: 'end', cell: (d) => formatWeight(d.netWeight) },
-    { header: 'Grade', align: 'center', cell: (d) => <GradeBadge grade={d.grade} /> },
-    { header: 'Date', className: 'hidden md:table-cell', cell: (d) => formatDate(d.date) },
-    { header: 'Status', cell: (d) => <DeliveryStatusBadge status={d.status} /> },
+    { header: 'Product', className: 'hidden sm:table-cell', cell: (d) => d.productName },
+    {
+      header: 'Quantity',
+      align: 'end',
+      cell: (d) => `${formatNumber(d.quantity)} ${d.unit}`,
+    },
+    {
+      header: 'Date',
+      className: 'hidden md:table-cell',
+      cell: (d) => formatDate(d.deliveryDate),
+    },
+    { header: 'Status', cell: (d) => <IntakeStatusBadge status={d.status} /> },
   ]
 
   return (
@@ -72,47 +97,73 @@ export function DeliveriesPage() {
         title="Deliveries"
         description="Track produce from intake through grading and confirmation"
         actions={
-          <Button icon={Plus} onClick={() => setWizardOpen(true)}>
+          <Button icon={Plus} onClick={() => navigate('/deliveries/new')}>
             New Delivery
           </Button>
         }
       />
 
+      {error && (
+        <Alert variant="danger" title="Couldn't load deliveries">
+          {error}
+        </Alert>
+      )}
+
       <Card flush>
         <div className="grid grid-cols-1 gap-3 border-b border-border p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            placeholder="Search ID or farmer…"
+          <Select
+            aria-label="Filter by farmer"
+            placeholder="All farmers"
+            value={farmerId}
+            onChange={(e) => setParam('farmerId', e.target.value)}
+            options={(farmersPage?.content ?? []).map((f) => ({
+              label: `${f.name} (${f.farmerCode})`,
+              value: String(f.id),
+            }))}
           />
           <Select
             aria-label="Filter by product"
             placeholder="All products"
-            value={product}
-            onChange={(e) => setProduct(e.target.value)}
-            options={products.map((p) => ({ label: p.name, value: p.name }))}
+            value={productId}
+            onChange={(e) => setParam('productId', e.target.value)}
+            options={(productsPage?.content ?? []).map((p) => ({
+              label: p.name,
+              value: String(p.id),
+            }))}
           />
           <Select
             aria-label="Filter by status"
             placeholder="All statuses"
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => setParam('status', e.target.value)}
             options={statusOptions}
           />
-          <input
-            type="date"
-            aria-label="Filter by date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="h-11 w-full rounded-md border border-input bg-card px-3.5 text-foreground transition-colors hover:border-muted-foreground/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              aria-label="From date"
+              value={from}
+              max={to || undefined}
+              onChange={(e) => setParam('from', e.target.value)}
+              className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors hover:border-muted-foreground/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            />
+            <input
+              type="date"
+              aria-label="To date"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setParam('to', e.target.value)}
+              className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors hover:border-muted-foreground/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            />
+          </div>
         </div>
 
         <Table
           columns={columns}
-          rows={filtered}
-          rowKey={(d) => d.id}
+          rows={deliveries}
+          rowKey={(d) => String(d.id)}
           loading={loading}
+          onRowClick={(d) => navigate(`/deliveries/${d.id}`)}
           empty={
             <EmptyState
               icon={Truck}
@@ -121,47 +172,36 @@ export function DeliveriesPage() {
             />
           }
         />
-        {!loading && filtered.length > 0 && (
-          <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
-            Showing {filtered.length} of {deliveries.length} deliveries
+
+        {!loading && data && data.totalElements > 0 && (
+          <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Page {data.number + 1} of {data.totalPages} · {data.totalElements}{' '}
+              {data.totalElements === 1 ? 'delivery' : 'deliveries'}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={ChevronLeft}
+                disabled={data.number <= 0}
+                onClick={() => setParam('page', String(data.number - 1))}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={ChevronRight}
+                disabled={data.number + 1 >= data.totalPages}
+                onClick={() => setParam('page', String(data.number + 1))}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </Card>
-
-      <Modal
-        open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        title="New Delivery"
-        description="Record produce arriving at the collection center."
-        footer={
-          <Button variant="outline" onClick={() => setWizardOpen(false)}>
-            Close
-          </Button>
-        }
-      >
-        <Alert variant="info" title="Delivery wizard coming soon">
-          The guided flow — select farmer → enter weight → grade → confirm →
-          calculate payment → update inventory — is planned for a later week.
-          The architecture already supports adding it here.
-        </Alert>
-        <ol className="mt-4 space-y-2 text-sm">
-          {[
-            'Select farmer',
-            'Enter net weight',
-            'Grade produce',
-            'Confirm & price',
-            'Update inventory',
-          ].map((step, i) => (
-            <li key={step} className="flex items-center gap-3 text-muted-foreground">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
-                {i + 1}
-              </span>
-              {step}
-              {i < 4 && <ArrowRight className="ms-auto h-3.5 w-3.5 opacity-40" aria-hidden="true" />}
-            </li>
-          ))}
-        </ol>
-      </Modal>
     </div>
   )
 }

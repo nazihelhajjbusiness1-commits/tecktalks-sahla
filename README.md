@@ -41,13 +41,20 @@ Each part has its own README:
 
 | Part | Status |
 |------|--------|
-| Frontend | **Week 1 foundation complete** — all primary screens on mock data |
-| Backend | **Sprint 2 complete** — farmers, products, grades and grade-based (USD/LBP) pricing, with global error handling and role-based security. 43 integration tests green against a real PostgreSQL container. |
-| Infra | PostgreSQL runnable via Docker; backend/frontend services scaffolded |
+| Frontend | **Sprint 5 — client-ready.** Real dashboard + four report screens, admin user management, permission-aware UI, Sahla branding. |
+| Backend | **Sprint 5 — MVP complete.** Full delivery→payment flow plus dashboard statistics, reporting APIs, extended audit trail, finalized role matrix, and auth hardening (refresh tokens, logout, 429 lockout). |
+| Infra | Postgres + backend + frontend via Docker Compose; env-driven, no committed secrets. |
 
-The frontend runs entirely on **mock data** today and is architected so that
-connecting the real backend is a configuration change (`VITE_USE_MOCKS=false`
-+ `VITE_API_URL`), not a rewrite.
+The frontend talks to the real backend by default (`VITE_USE_MOCKS=false`);
+mock mode remains available for offline UI work.
+
+### Sprint 5 docs
+- **[`docs/security-review.md`](docs/security-review.md)** — security posture,
+  what was hardened, and the remaining recommendations.
+- **[`docs/regression-checklist.md`](docs/regression-checklist.md)** — deploy /
+  restart runbook, demo-data step, and the repeatable demo + role-matrix checklist.
+- **Demo data:** load the worked Lebanese scenario (idempotent) with
+  `docker exec -i sahla-db psql -U sahla -d sahla < backend/src/main/resources/db/demo/demo-seed.sql`.
 
 ---
 

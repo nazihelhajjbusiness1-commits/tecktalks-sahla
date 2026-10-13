@@ -15,6 +15,18 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+/**
+ * Money in a specific currency (USD or LBP), never converted or combined.
+ * LBP is shown without fraction digits (large whole-pound amounts).
+ */
+export function formatMoney(amount: number, currency: 'USD' | 'LBP'): string {
+  return new Intl.NumberFormat(LOCALE, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: currency === 'LBP' ? 0 : 2,
+  }).format(amount)
+}
+
 /** Kilograms with thousands separators, e.g. "8,420 kg". */
 export function formatWeight(kg: number): string {
   return `${new Intl.NumberFormat(LOCALE).format(kg)} kg`

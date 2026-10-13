@@ -8,6 +8,8 @@ import {
   ClipboardCheck,
   ShieldCheck,
   XCircle,
+  Ban,
+  Truck,
   PackageCheck,
   PackageMinus,
   PackageX,
@@ -18,6 +20,7 @@ import { cn } from '@/utils/cn'
 import type {
   DeliveryStatus,
   FarmerStatus,
+  IntakeStatus,
   InventoryStatus,
   PaymentStatus,
 } from '@/types'
@@ -83,6 +86,26 @@ function Badge({ config }: { config: BadgeConfig }) {
 
 export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   return <Badge config={deliveryConfig[status]} />
+}
+
+// Backend delivery lifecycle (Sprint 3 intake workflow).
+const intakeConfig: Record<IntakeStatus, BadgeConfig> = {
+  PENDING: { label: 'Pending', tone: 'neutral', icon: FileText },
+  WEIGHED: { label: 'Weighed', tone: 'info', icon: Scale },
+  GRADED: { label: 'Graded', tone: 'warning', icon: ClipboardCheck },
+  CONFIRMED: { label: 'Confirmed', tone: 'primary', icon: ShieldCheck },
+  DELIVERED: { label: 'Delivered', tone: 'success', icon: PackageCheck },
+  REJECTED: { label: 'Rejected', tone: 'danger', icon: XCircle },
+  CANCELLED: { label: 'Cancelled', tone: 'neutral', icon: Ban },
+}
+
+export function IntakeStatusBadge({ status }: { status: IntakeStatus }) {
+  const config = intakeConfig[status] ?? {
+    label: status,
+    tone: 'neutral' as Tone,
+    icon: Truck,
+  }
+  return <Badge config={config} />
 }
 
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {

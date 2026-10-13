@@ -12,6 +12,7 @@ import {
 import { PageHeader, Card } from '@/components/common'
 import { cn } from '@/utils/cn'
 import { brand } from '@/config/brand'
+import { useAuth } from '@/hooks/useAuth'
 
 interface SettingDef {
   key: string
@@ -20,19 +21,23 @@ interface SettingDef {
   icon: LucideIcon
   /** Destination route; when omitted the card is a "coming soon" placeholder. */
   to?: string
+  /** When true, only administrators see this card as navigable. */
+  adminOnly?: boolean
 }
 
 const settings: SettingDef[] = [
   { key: 'products', title: 'Products', description: 'Crops, produce, grades and pricing.', icon: Package, to: '/settings/products' },
   { key: 'grades', title: 'Grades', description: 'Quality grades, managed per product.', icon: Star, to: '/settings/products' },
   { key: 'pricing', title: 'Pricing', description: 'Grade-based price lists per product.', icon: DollarSign, to: '/settings/products' },
-  { key: 'users', title: 'Users', description: 'Manage staff accounts and access.', icon: Users },
+  { key: 'users', title: 'Users', description: 'Manage staff accounts and access.', icon: Users, to: '/settings/users', adminOnly: true },
   { key: 'roles', title: 'Roles & Permissions', description: 'Define what each role can do.', icon: ShieldCheck },
   { key: 'coop', title: 'Cooperative Settings', description: 'Organization details and preferences.', icon: Building2 },
 ]
 
 export function SettingsPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   return (
     <div className="space-y-6">
@@ -42,8 +47,8 @@ export function SettingsPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {settings.map(({ key, title, description, icon: Icon, to }) => {
-          const interactive = Boolean(to)
+        {settings.map(({ key, title, description, icon: Icon, to, adminOnly }) => {
+          const interactive = Boolean(to) && (!adminOnly || isAdmin)
           return (
             <Card
               key={key}

@@ -1,7 +1,6 @@
 package com.farmmanagement.backend.inventory;
 
 import com.farmmanagement.backend.farmers.Farmer;
-import com.farmmanagement.backend.grading.Grade;
 import com.farmmanagement.backend.products.Product;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -21,9 +20,11 @@ public class InventoryMovement {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "grade_id")
-    private Grade grade;
+    // References grade_definitions.id (the per-product grade selected for the
+    // originating delivery). Kept as a plain id to avoid a hard association in
+    // the Sprint 3 MVP; nullable because non-delivery movements may be gradeless.
+    @Column(name = "grade_id")
+    private Long gradeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "farmer_id")
@@ -71,8 +72,8 @@ public class InventoryMovement {
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
 
-    public Grade getGrade() { return grade; }
-    public void setGrade(Grade grade) { this.grade = grade; }
+    public Long getGradeId() { return gradeId; }
+    public void setGradeId(Long gradeId) { this.gradeId = gradeId; }
 
     public Farmer getFarmer() { return farmer; }
     public void setFarmer(Farmer farmer) { this.farmer = farmer; }

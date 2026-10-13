@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Planning docs (task assignments) — not code
+*.docx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

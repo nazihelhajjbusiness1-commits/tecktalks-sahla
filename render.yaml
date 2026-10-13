@@ -1,0 +1,30 @@
+# Render Blueprint for the Sahla backend (Spring Boot, Docker).
+# Import via Render Dashboard → New → Blueprint, pointed at this repo.
+# Secrets use `sync: false`: Render will prompt for them on first apply and
+# keep them out of version control. Set their values in the Render dashboard.
+services:
+  - type: web
+    name: sahla-backend
+    runtime: docker
+    plan: free
+    # Pick the region closest to your Supabase project to cut DB latency.
+    region: oregon
+    branch: develop
+    rootDir: backend          # build context = backend/; uses backend/Dockerfile
+    autoDeploy: true
+    envVars:
+      # Supabase Session-pooler connection (port 5432). See deploy runbook.
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      # Must be >= 32 chars and not "change-me", or the app refuses to start.
+      - key: JWT_SECRET
+        sync: false
+      # Set to your Vercel origin, e.g. https://sahla.vercel.app (no trailing slash).
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SERVER_PORT
+        value: "8080"

@@ -1,10 +1,20 @@
 import type { InventoryItem } from '@/types'
-import { USE_MOCKS, mockDelay, request } from './api'
+import { mockDelay, request } from './api'
 import { inventory } from './mockData'
 
 export const inventoryService = {
+  // The Inventory overview page still serves mock data (its own backend-backed
+  // rebuild is a later task); the delivery details screen uses the real
+  // movement-derived balance below.
   async list(): Promise<InventoryItem[]> {
-    if (USE_MOCKS) return mockDelay(inventory)
-    return request<InventoryItem[]>('/inventory')
+    return mockDelay(inventory)
+  },
+
+  /**
+   * DT-56/DT-61: current stock for a product, derived from the movement ledger.
+   * Backend returns a bare numeric balance for `/inventory/balance/{productId}`.
+   */
+  balanceForProduct(productId: number): Promise<number> {
+    return request<number>(`/inventory/balance/${productId}`)
   },
 }

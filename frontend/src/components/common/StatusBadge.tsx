@@ -8,6 +8,8 @@ import {
   ClipboardCheck,
   ShieldCheck,
   XCircle,
+  Ban,
+  Truck,
   PackageCheck,
   PackageMinus,
   PackageX,
@@ -18,6 +20,7 @@ import { cn } from '@/utils/cn'
 import type {
   DeliveryStatus,
   FarmerStatus,
+  IntakeStatus,
   InventoryStatus,
   PaymentStatus,
 } from '@/types'
@@ -62,8 +65,8 @@ const inventoryConfig: Record<InventoryStatus, BadgeConfig> = {
 }
 
 const farmerConfig: Record<FarmerStatus, BadgeConfig> = {
-  active: { label: 'Active', tone: 'success', icon: CheckCircle2 },
-  inactive: { label: 'Inactive', tone: 'neutral', icon: Circle },
+  ACTIVE: { label: 'Active', tone: 'success', icon: CheckCircle2 },
+  INACTIVE: { label: 'Inactive', tone: 'neutral', icon: Circle },
 }
 
 function Badge({ config }: { config: BadgeConfig }) {
@@ -85,6 +88,26 @@ export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   return <Badge config={deliveryConfig[status]} />
 }
 
+// Backend delivery lifecycle (Sprint 3 intake workflow).
+const intakeConfig: Record<IntakeStatus, BadgeConfig> = {
+  PENDING: { label: 'Pending', tone: 'neutral', icon: FileText },
+  WEIGHED: { label: 'Weighed', tone: 'info', icon: Scale },
+  GRADED: { label: 'Graded', tone: 'warning', icon: ClipboardCheck },
+  CONFIRMED: { label: 'Confirmed', tone: 'primary', icon: ShieldCheck },
+  DELIVERED: { label: 'Delivered', tone: 'success', icon: PackageCheck },
+  REJECTED: { label: 'Rejected', tone: 'danger', icon: XCircle },
+  CANCELLED: { label: 'Cancelled', tone: 'neutral', icon: Ban },
+}
+
+export function IntakeStatusBadge({ status }: { status: IntakeStatus }) {
+  const config = intakeConfig[status] ?? {
+    label: status,
+    tone: 'neutral' as Tone,
+    icon: Truck,
+  }
+  return <Badge config={config} />
+}
+
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return <Badge config={paymentConfig[status]} />
 }
@@ -95,6 +118,19 @@ export function InventoryStatusBadge({ status }: { status: InventoryStatus }) {
 
 export function FarmerStatusBadge({ status }: { status: FarmerStatus }) {
   return <Badge config={farmerConfig[status]} />
+}
+
+/** Active / Inactive pill for catalog records (products, grades, prices). */
+export function ActiveBadge({ active }: { active: boolean }) {
+  return (
+    <Badge
+      config={
+        active
+          ? { label: 'Active', tone: 'success', icon: CheckCircle2 }
+          : { label: 'Inactive', tone: 'neutral', icon: Circle }
+      }
+    />
+  )
 }
 
 const gradeClasses: Record<string, string> = {

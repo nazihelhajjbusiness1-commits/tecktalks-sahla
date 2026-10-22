@@ -41,13 +41,20 @@ Each part has its own README:
 
 | Part | Status |
 |------|--------|
-| Frontend | **Week 1 foundation complete** — all primary screens on mock data |
-| Backend | Not started (placeholder) |
-| Infra | PostgreSQL runnable via Docker; backend/frontend services scaffolded |
+| Frontend | **Sprint 5 — client-ready.** Real dashboard + four report screens, admin user management, permission-aware UI, Sahla branding. |
+| Backend | **Sprint 5 — MVP complete.** Full delivery→payment flow plus dashboard statistics, reporting APIs, extended audit trail, finalized role matrix, and auth hardening (refresh tokens, logout, 429 lockout). |
+| Infra | Postgres + backend + frontend via Docker Compose; env-driven, no committed secrets. |
 
-The frontend runs entirely on **mock data** today and is architected so that
-connecting the real backend is a configuration change (`VITE_USE_MOCKS=false`
-+ `VITE_API_URL`), not a rewrite.
+The frontend talks to the real backend by default (`VITE_USE_MOCKS=false`);
+mock mode remains available for offline UI work.
+
+### Sprint 5 docs
+- **[`docs/security-review.md`](docs/security-review.md)** — security posture,
+  what was hardened, and the remaining recommendations.
+- **[`docs/regression-checklist.md`](docs/regression-checklist.md)** — deploy /
+  restart runbook, demo-data step, and the repeatable demo + role-matrix checklist.
+- **Demo data:** load the worked Lebanese scenario (idempotent) with
+  `docker exec -i sahla-db psql -U sahla -d sahla < backend/src/main/resources/db/demo/demo-seed.sql`.
 
 ---
 
@@ -81,6 +88,39 @@ docker compose --env-file ../.env up db
 The `backend` and `frontend` Docker services are defined in
 [`infra/docker-compose.yml`](infra/docker-compose.yml) and become runnable once
 their Dockerfiles are added.
+
+### 4. Backend (Spring Boot API)
+
+Requires **JDK 21** (set `JAVA_HOME`) and a PostgreSQL database. Copy the
+backend env template and fill in the values:
+
+```bash
+cd backend
+cp .env.example .env    # set DB_* and a JWT_SECRET of at least 32 chars
+./mvnw spring-boot:run  # starts on http://localhost:8080 (Swagger at /swagger-ui.html)
+```
+
+Flyway applies the schema (`V1`–`V6`), dev seed data (`V7`) and demo login
+accounts (`V8`) automatically on startup, so a fresh, empty database is ready to
+use with no manual SQL.
+
+**Seeded demo accounts** (all with password `Password123`):
+
+| Email | Role | Notes |
+|-------|------|-------|
+| `admin@sahla.lb` | ADMIN | Full access |
+| `manager@sahla.lb` | MANAGER | Sprint Review demo account |
+| `receiving@sahla.lb` | RECEIVING_EMPLOYEE | Can create/search farmers |
+| `inspector@sahla.lb` | INSPECTOR | Read-only (for permission testing) |
+
+**Running the test suite** (integration tests use Testcontainers, so
+**Docker must be running** — no local DB setup needed; each run spins up its own
+PostgreSQL and cleans up after itself):
+
+```bash
+cd backend
+./mvnw test             # 43 integration tests across farmers, products, grades, pricing + security
+```
 
 ---
 

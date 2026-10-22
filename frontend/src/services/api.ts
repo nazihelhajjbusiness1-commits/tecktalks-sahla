@@ -1,18 +1,20 @@
 /**
  * Thin HTTP client + mock toggle.
  *
- * Week 1 runs entirely on mock data (see mockData.ts and the *Service
- * modules). This module centralizes the base URL, auth header, and a
- * small `request` helper so switching to the real Spring Boot REST API
- * later means flipping `USE_MOCKS` to false and pointing VITE_API_URL at
- * the backend — no component changes required.
+ * Services centralize the base URL, auth header, and a small `request`
+ * helper here. Sprint 2 talks to the real Spring Boot REST API by default;
+ * set `VITE_USE_MOCKS=true` to fall back to local mock data for offline
+ * frontend work — no component changes required either way.
+ *
+ * Configure the backend base URL with `VITE_API_URL`
+ * (e.g. http://localhost:8080/api). Defaults to `/api` for same-origin / proxy.
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api'
 
 /** Global switch. When true, services resolve local mock data. */
 export const USE_MOCKS =
-  (import.meta.env.VITE_USE_MOCKS ?? 'true') !== 'false'
+  (import.meta.env.VITE_USE_MOCKS ?? 'false') === 'true'
 
 const TOKEN_KEY = 'sahla.token'
 
@@ -50,7 +52,18 @@ export async function request<T>(
   })
 
   if (!res.ok) {
-    const message = await res.text().catch(() => res.statusText)
+    // Backend errors are JSON: ErrorResponse { message } or ApiResponse { message }.
+    // Fall back to raw text / status when the body isn't JSON.
+    const raw = await res.text().catch(() => '')
+    let message = raw || res.statusText
+    if (raw) {
+      try {
+        const body = JSON.parse(raw) as { message?: string }
+        if (body?.message) message = body.message
+      } catch {
+        /* not JSON — keep raw text */
+      }
+    }
     throw new ApiError(res.status, message || 'Request failed')
   }
 
@@ -71,4 +84,20 @@ export class ApiError extends Error {
 /** Simulate network latency for mock services so loading states are real. */
 export function mockDelay<T>(data: T, ms = 450): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms))
+}
+
+/**
+ * Build a `?key=value` query string from a params object, skipping
+ * undefined/null/empty values. Returns '' when there is nothing to add.
+ */
+export function buildQuery(
+  params: Record<string, string | number | boolean | undefined | null>,
+): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue
+    search.set(key, String(value))
+  }
+  const qs = search.toString()
+  return qs ? `?${qs}` : ''
 }

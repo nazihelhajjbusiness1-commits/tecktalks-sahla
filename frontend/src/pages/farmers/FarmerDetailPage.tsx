@@ -1,41 +1,62 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
   Phone,
   MapPin,
-  Sprout,
+  Hash,
+  CalendarDays,
+  Pencil,
   Wallet,
-  Truck,
 } from 'lucide-react'
 import {
   Card,
   CardHeader,
   Button,
-  Table,
   LoadingSpinner,
   EmptyState,
   FarmerStatusBadge,
-  DeliveryStatusBadge,
-  GradeBadge,
+  Select,
+  Table,
   type Column,
 } from '@/components/common'
 import { useAsync } from '@/hooks/useAsync'
 import { farmerService } from '@/services/farmerService'
-import { deliveryService } from '@/services/deliveryService'
-import { formatCurrency, formatDate, formatWeight } from '@/utils/format'
-import type { Delivery } from '@/types'
+import { paymentService } from '@/services/paymentService'
+import { formatDate, formatDateTime, formatMoney, initials } from '@/utils/format'
+import type { Currency, FarmerPayment, StatementLine } from '@/types'
+import { FarmerFormModal } from './FarmerFormModal'
 
 export function FarmerDetailPage() {
   const { id = '' } = useParams()
+  const farmerId = Number(id)
   const navigate = useNavigate()
+  const [editOpen, setEditOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const [currency, setCurrency] = useState('')
+
   const { data: farmer, loading } = useAsync(
-    () => farmerService.getById(id),
-    [id],
+    () => farmerService.getById(farmerId),
+    [farmerId, refreshKey],
   )
-  const { data: deliveries } = useAsync(
-    () => deliveryService.listByFarmer(id),
-    [id],
-  )
+
+  // Financial data (DT-77) — balances, statement, payment history from the ledger.
+  const { data: finance, loading: financeLoading } = useAsync(async () => {
+    const [balances, statement, payments] = await Promise.all([
+      paymentService.getFarmerBalances(farmerId).catch(() => null),
+      paymentService
+        .getFarmerStatement(farmerId, { currency: (currency || undefined) as Currency | undefined })
+        .catch(() => [] as StatementLine[]),
+      paymentService
+        .getFarmerPayments(farmerId, {
+          currency: (currency || undefined) as Currency | undefined,
+          size: 50,
+        })
+        .catch(() => null),
+    ])
+    return { balances, statement, payments }
+  }, [farmerId, refreshKey, currency])
 
   if (loading) {
     return (
@@ -51,7 +72,11 @@ export function FarmerDetailPage() {
         title="Farmer not found"
         description="This farmer may have been removed or the link is incorrect."
         action={
-          <Button variant="outline" icon={ArrowLeft} onClick={() => navigate('/farmers')}>
+          <Button
+            variant="outline"
+            icon={ArrowLeft}
+            onClick={() => navigate('/farmers')}
+          >
             Back to Farmers
           </Button>
         }
@@ -59,22 +84,47 @@ export function FarmerDetailPage() {
     )
   }
 
-  const deliveryColumns: Column<Delivery>[] = [
-    { header: 'Delivery', cell: (d) => <span className="font-mono text-xs">{d.id}</span> },
-    { header: 'Product', cell: (d) => d.product },
-    { header: 'Weight', align: 'end', cell: (d) => formatWeight(d.netWeight) },
-    { header: 'Grade', align: 'center', cell: (d) => <GradeBadge grade={d.grade} /> },
-    { header: 'Date', className: 'hidden sm:table-cell', cell: (d) => formatDate(d.date) },
-    { header: 'Status', cell: (d) => <DeliveryStatusBadge status={d.status} /> },
+  const facts = [
+    { icon: Hash, label: 'Farmer code', value: farmer.farmerCode },
+    { icon: Phone, label: 'Phone', value: farmer.phone },
+    { icon: MapPin, label: 'Village', value: farmer.village },
+    { icon: CalendarDays, label: 'Registered', value: formatDate(farmer.createdAt) },
   ]
 
-  const facts = [
-    { icon: MapPin, label: 'Location', value: `${farmer.village}, ${farmer.region}` },
-    { icon: Phone, label: 'Phone', value: farmer.phone },
-    { icon: Sprout, label: 'Main crop', value: farmer.mainCrop },
-    { icon: Truck, label: 'Total deliveries', value: String(farmer.totalDeliveries) },
-    { icon: Wallet, label: 'Outstanding balance', value: formatCurrency(farmer.balance) },
+  const statementColumns: Column<StatementLine>[] = [
+    { header: 'Date', cell: (l) => formatDate(l.occurredAt) },
+    { header: 'Type', cell: (l) => l.entryType.replaceAll('_', ' ') },
+    { header: 'Description', className: 'hidden sm:table-cell', cell: (l) => l.description ?? '—' },
+    {
+      header: 'Debit',
+      align: 'end',
+      cell: (l) => (l.debit != null ? formatMoney(l.debit, l.currency) : '—'),
+    },
+    {
+      header: 'Credit',
+      align: 'end',
+      cell: (l) => (l.credit != null ? formatMoney(l.credit, l.currency) : '—'),
+    },
+    {
+      header: 'Balance',
+      align: 'end',
+      cell: (l) => (
+        <span className="font-medium">{formatMoney(l.runningBalance, l.currency)}</span>
+      ),
+    },
   ]
+
+  const paymentColumns: Column<FarmerPayment>[] = [
+    { header: 'Date', cell: (p) => formatDateTime(p.paidAt) },
+    { header: 'Amount', align: 'end', cell: (p) => formatMoney(p.amount, p.currency) },
+    { header: 'Method', cell: (p) => p.paymentMethod.replaceAll('_', ' ') },
+    { header: 'Reference', className: 'hidden sm:table-cell', cell: (p) => p.referenceNumber ?? '—' },
+    { header: 'Recorded by', className: 'hidden md:table-cell', cell: (p) => p.recordedBy ?? '—' },
+  ]
+
+  const balances = finance?.balances?.balances ?? []
+  const statement = finance?.statement ?? []
+  const payments = finance?.payments?.content ?? []
 
   return (
     <div className="space-y-6">
@@ -89,11 +139,7 @@ export function FarmerDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-lg font-semibold text-primary">
-            {farmer.name
-              .split(' ')
-              .slice(0, 2)
-              .map((n) => n[0])
-              .join('')}
+            {initials(farmer.name)}
           </span>
           <div>
             <div className="flex items-center gap-2.5">
@@ -103,13 +149,22 @@ export function FarmerDetailPage() {
               <FarmerStatusBadge status={farmer.status} />
             </div>
             <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-              {farmer.id} · Joined {formatDate(farmer.joinedAt)}
+              {farmer.farmerCode} · Registered {formatDate(farmer.createdAt)}
             </p>
           </div>
         </div>
-        <Button variant="outline" icon={ArrowLeft} onClick={() => navigate('/farmers')}>
-          Back
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button icon={Pencil} onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            icon={ArrowLeft}
+            onClick={() => navigate('/farmers')}
+          >
+            Back
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -128,24 +183,79 @@ export function FarmerDetailPage() {
         </dl>
       </Card>
 
-      <Card flush>
-        <CardHeader
-          title="Delivery History"
-          description="All produce delivered by this farmer"
+      {/* Financial (DT-77) — balances, statement and payment history from the ledger. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="font-heading text-lg font-semibold text-foreground">Financial</h2>
+        <Select
+          aria-label="Filter by currency"
+          placeholder="All currencies"
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          options={[
+            { label: 'USD', value: 'USD' },
+            { label: 'LBP', value: 'LBP' },
+          ]}
+          containerClassName="sm:w-44"
         />
-        <Table
-          columns={deliveryColumns}
-          rows={deliveries ?? []}
-          rowKey={(d) => d.id}
-          empty={
-            <EmptyState
-              icon={Truck}
-              title="No deliveries yet"
-              description="Deliveries from this farmer will appear here."
+      </div>
+
+      {financeLoading ? (
+        <div className="flex justify-center py-10">
+          <LoadingSpinner label="Loading finances…" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {balances.length === 0 ? (
+              <Card>
+                <p className="text-sm text-muted-foreground">No outstanding balance.</p>
+              </Card>
+            ) : (
+              balances.map((b) => (
+                <Card key={b.currency}>
+                  <p className="text-xs text-muted-foreground">Outstanding ({b.currency})</p>
+                  <p className="mt-1 text-2xl font-semibold text-foreground">
+                    {formatMoney(b.outstanding, b.currency)}
+                  </p>
+                </Card>
+              ))
+            )}
+          </div>
+
+          <Card flush>
+            <CardHeader title="Statement" description="Settlement credits and payment debits" />
+            <Table
+              columns={statementColumns}
+              rows={statement}
+              rowKey={(l) => String(l.id)}
+              empty={
+                <EmptyState
+                  icon={Wallet}
+                  title="No financial history"
+                  description="Confirmed settlements and payments appear here."
+                />
+              }
             />
-          }
-        />
-      </Card>
+          </Card>
+
+          <Card flush>
+            <CardHeader title="Payment history" />
+            <Table
+              columns={paymentColumns}
+              rows={payments}
+              rowKey={(p) => String(p.id)}
+              empty={<EmptyState icon={Wallet} title="No payments recorded" />}
+            />
+          </Card>
+        </>
+      )}
+
+      <FarmerFormModal
+        open={editOpen}
+        farmer={farmer}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   )
 }

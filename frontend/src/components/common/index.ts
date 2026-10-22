@@ -12,9 +12,11 @@ export { Table } from './Table'
 export type { Column } from './Table'
 export {
   DeliveryStatusBadge,
+  IntakeStatusBadge,
   PaymentStatusBadge,
   InventoryStatusBadge,
   FarmerStatusBadge,
+  ActiveBadge,
   GradeBadge,
 } from './StatusBadge'
 export { Modal } from './Modal'

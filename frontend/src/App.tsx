@@ -7,10 +7,16 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { FarmersPage } from '@/pages/farmers/FarmersPage'
 import { FarmerDetailPage } from '@/pages/farmers/FarmerDetailPage'
 import { DeliveriesPage } from '@/pages/deliveries/DeliveriesPage'
+import { NewDeliveryWizard } from '@/pages/deliveries/NewDeliveryWizard'
+import { DeliveryDetailPage } from '@/pages/deliveries/DeliveryDetailPage'
+import { SettlementPage } from '@/pages/deliveries/SettlementPage'
 import { InventoryPage } from '@/pages/inventory/InventoryPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { UsersSettingsPage } from '@/pages/settings/UsersSettingsPage'
+import { ProductsSettingsPage } from '@/pages/settings/ProductsSettingsPage'
+import { ProductSettingsDetailPage } from '@/pages/settings/ProductSettingsDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
@@ -27,10 +33,19 @@ function App() {
               <Route path="/farmers" element={<FarmersPage />} />
               <Route path="/farmers/:id" element={<FarmerDetailPage />} />
               <Route path="/deliveries" element={<DeliveriesPage />} />
+              <Route path="/deliveries/new" element={<NewDeliveryWizard />} />
+              <Route path="/deliveries/:id" element={<DeliveryDetailPage />} />
+              <Route path="/deliveries/:id/settlement" element={<SettlementPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/users" element={<UsersSettingsPage />} />
+              <Route path="/settings/products" element={<ProductsSettingsPage />} />
+              <Route
+                path="/settings/products/:id"
+                element={<ProductSettingsDetailPage />}
+              />
             </Route>
           </Route>
 

@@ -22,27 +22,25 @@ export const currentUser: User = {
 }
 
 export const products: Product[] = [
-  { id: 'p-apple', name: 'Apples', unit: 'kg', category: 'Fruit' },
-  { id: 'p-tomato', name: 'Tomatoes', unit: 'kg', category: 'Vegetable' },
-  { id: 'p-potato', name: 'Potatoes', unit: 'kg', category: 'Vegetable' },
-  { id: 'p-cherry', name: 'Cherries', unit: 'kg', category: 'Fruit' },
-  { id: 'p-grape', name: 'Grapes', unit: 'kg', category: 'Fruit' },
-  { id: 'p-olive', name: 'Olives', unit: 'kg', category: 'Fruit' },
+  { id: 1, name: 'Apple', variety: 'Lebanese Red', unit: 'KG', active: true, createdAt: '2026-01-05T08:00:00Z', updatedAt: '2026-01-05T08:00:00Z' },
+  { id: 2, name: 'Tomato', variety: 'Local', unit: 'KG', active: true, createdAt: '2026-01-05T08:00:00Z', updatedAt: '2026-01-05T08:00:00Z' },
+  { id: 3, name: 'Potato', variety: 'Spunta', unit: 'KG', active: true, createdAt: '2026-01-05T08:00:00Z', updatedAt: '2026-01-05T08:00:00Z' },
+  { id: 4, name: 'Orange', variety: 'Valencia', unit: 'KG', active: true, createdAt: '2026-01-05T08:00:00Z', updatedAt: '2026-01-05T08:00:00Z' },
 ]
 
 export const farmers: Farmer[] = [
-  { id: 'F-1024', name: 'Ahmad Khalil', village: 'Kfarzabad', region: 'Bekaa', phone: '+961 71 234 118', mainCrop: 'Apples', totalDeliveries: 42, balance: 1250, status: 'active', joinedAt: '2023-03-12' },
-  { id: 'F-1025', name: 'Joseph Hanna', village: 'Zahle', region: 'Zahle', phone: '+961 70 991 233', mainCrop: 'Tomatoes', totalDeliveries: 31, balance: 480, status: 'active', joinedAt: '2023-05-02' },
-  { id: 'F-1026', name: 'Maya Daher', village: 'Ablah', region: 'Bekaa', phone: '+961 76 552 907', mainCrop: 'Potatoes', totalDeliveries: 58, balance: 0, status: 'active', joinedAt: '2022-11-19' },
-  { id: 'F-1027', name: 'Elias Rahme', village: 'Bcharre', region: 'Bcharre', phone: '+961 71 800 445', mainCrop: 'Apples', totalDeliveries: 27, balance: 2100, status: 'active', joinedAt: '2023-01-28' },
-  { id: 'F-1028', name: 'Fatima Zeaiter', village: 'Baalbek', region: 'Bekaa', phone: '+961 78 340 662', mainCrop: 'Cherries', totalDeliveries: 19, balance: 320, status: 'active', joinedAt: '2023-06-15' },
-  { id: 'F-1029', name: 'Georges Nakhle', village: 'Batroun', region: 'Batroun', phone: '+961 70 118 774', mainCrop: 'Grapes', totalDeliveries: 64, balance: 0, status: 'active', joinedAt: '2022-08-04' },
-  { id: 'F-1030', name: 'Hassan Ismail', village: 'Halba', region: 'Akkar', phone: '+961 76 245 019', mainCrop: 'Potatoes', totalDeliveries: 12, balance: 90, status: 'active', joinedAt: '2024-02-11' },
-  { id: 'F-1031', name: 'Nour Semaan', village: 'Jezzine', region: 'Jezzine', phone: '+961 71 667 302', mainCrop: 'Olives', totalDeliveries: 8, balance: 0, status: 'inactive', joinedAt: '2024-04-22' },
-  { id: 'F-1032', name: 'Khalil Abou Zeid', village: 'Qab Elias', region: 'Bekaa', phone: '+961 70 559 128', mainCrop: 'Tomatoes', totalDeliveries: 46, balance: 760, status: 'active', joinedAt: '2023-02-09' },
-  { id: 'F-1033', name: 'Rita Khoury', village: 'Zahle', region: 'Zahle', phone: '+961 78 902 351', mainCrop: 'Cherries', totalDeliveries: 22, balance: 540, status: 'active', joinedAt: '2023-09-30' },
-  { id: 'F-1034', name: 'Samir Haddad', village: 'Bcharre', region: 'Bcharre', phone: '+961 71 443 890', mainCrop: 'Apples', totalDeliveries: 37, balance: 0, status: 'active', joinedAt: '2022-12-01' },
-  { id: 'F-1035', name: 'Layla Mansour', village: 'Rankous', region: 'Akkar', phone: '+961 76 771 204', mainCrop: 'Potatoes', totalDeliveries: 15, balance: 210, status: 'inactive', joinedAt: '2024-01-17' },
+  { id: 1, farmerCode: 'F-00001', name: 'Ahmad Khalil', phone: '71234118', village: 'Kfarzabad', status: 'ACTIVE', createdAt: '2023-03-12T08:00:00Z', updatedAt: '2023-03-12T08:00:00Z' },
+  { id: 2, farmerCode: 'F-00002', name: 'Joseph Hanna', phone: '70991233', village: 'Zahle', status: 'ACTIVE', createdAt: '2023-05-02T08:00:00Z', updatedAt: '2023-05-02T08:00:00Z' },
+  { id: 3, farmerCode: 'F-00003', name: 'Maya Daher', phone: '76552907', village: 'Ablah', status: 'ACTIVE', createdAt: '2022-11-19T08:00:00Z', updatedAt: '2022-11-19T08:00:00Z' },
+  { id: 4, farmerCode: 'F-00004', name: 'Elias Rahme', phone: '71800445', village: 'Bcharre', status: 'ACTIVE', createdAt: '2023-01-28T08:00:00Z', updatedAt: '2023-01-28T08:00:00Z' },
+  { id: 5, farmerCode: 'F-00005', name: 'Fatima Zeaiter', phone: '78340662', village: 'Baalbek', status: 'ACTIVE', createdAt: '2023-06-15T08:00:00Z', updatedAt: '2023-06-15T08:00:00Z' },
+  { id: 6, farmerCode: 'F-00006', name: 'Georges Nakhle', phone: '70118774', village: 'Batroun', status: 'ACTIVE', createdAt: '2022-08-04T08:00:00Z', updatedAt: '2022-08-04T08:00:00Z' },
+  { id: 7, farmerCode: 'F-00007', name: 'Hassan Ismail', phone: '76245019', village: 'Halba', status: 'ACTIVE', createdAt: '2024-02-11T08:00:00Z', updatedAt: '2024-02-11T08:00:00Z' },
+  { id: 8, farmerCode: 'F-00008', name: 'Nour Semaan', phone: '71667302', village: 'Jezzine', status: 'INACTIVE', createdAt: '2024-04-22T08:00:00Z', updatedAt: '2024-04-22T08:00:00Z' },
+  { id: 9, farmerCode: 'F-00009', name: 'Khalil Abou Zeid', phone: '70559128', village: 'Qab Elias', status: 'ACTIVE', createdAt: '2023-02-09T08:00:00Z', updatedAt: '2023-02-09T08:00:00Z' },
+  { id: 10, farmerCode: 'F-00010', name: 'Rita Khoury', phone: '78902351', village: 'Zahle', status: 'ACTIVE', createdAt: '2023-09-30T08:00:00Z', updatedAt: '2023-09-30T08:00:00Z' },
+  { id: 11, farmerCode: 'F-00011', name: 'Samir Haddad', phone: '71443890', village: 'Bcharre', status: 'ACTIVE', createdAt: '2022-12-01T08:00:00Z', updatedAt: '2022-12-01T08:00:00Z' },
+  { id: 12, farmerCode: 'F-00012', name: 'Layla Mansour', phone: '76771204', village: 'Rankous', status: 'INACTIVE', createdAt: '2024-01-17T08:00:00Z', updatedAt: '2024-01-17T08:00:00Z' },
 ]
 
 export const deliveries: Delivery[] = [

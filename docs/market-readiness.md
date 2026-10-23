@@ -72,3 +72,54 @@ money/users · **P2** = important for a polished, scalable product.
 3. Actuator health probes + automated DB backups (P1 infra).
 4. Arabic/RTL i18n (P1 UX / adoption).
 5. Confirm-path integration test + settlement-flow frontend tests + Newman in CI (P1 testing).
+
+---
+
+## Role model & roadmap (Admin and Inspector)
+
+**Problem.** Today `Admin = Manager + (create/list users)`. The two roles sit on
+a single axis of power ("how much of the cooperative's business can you touch"),
+so Admin reads as a Manager with one extra button rather than a higher authority.
+The fix is a **second axis**: authority over the *platform*, not the produce
+business. Likewise the **Inspector** is currently a single action (assign a
+grade); it should own the whole **quality** domain.
+
+**Reframing.** Operational authority splits into three domains — Receiving =
+*quantity*, Inspector = *quality*, Accountant = *money* — with Manager
+orchestrating all three for one cooperative. Admin becomes the **platform
+operator** above the business.
+
+### Admin → platform operator
+- **T1 (quick win):** full user lifecycle — edit, deactivate/reactivate, change
+  role, reset/force-reset password, unlock, force-logout. (Needs a `status`
+  column on `users` + admin-only endpoints.)
+- **T2:** impersonation ("log in as" any user, fully audited) for support/debug.
+- **T3:** platform analytics — active users, logins over time, feature usage,
+  platform-wide volume; full cross-user audit trail.
+- **T4:** feedback inbox + feature-request board + feature flags/announcements.
+- **T5 (SaaS):** tenant management, billing/subscription, exports, backups,
+  system health. Ties to the multi-tenancy work needed to sell to many companies.
+
+### Inspector → quality owner
+- **Core (quick win):** inspection record per delivery — grade **plus a reason/
+  note** (and later photos). (Needs a `notes` column on `delivery_grades`.)
+- **Quality view (quick win):** a QC screen — grade distribution, reject rate,
+  quality trend — for the Inspector's own landing page.
+- **Later:** re-grade/override with reason (dispute resolution); reject/
+  quarantine/spoilage handling feeding inventory; ownership of grade definitions
+  & quality criteria; per-farmer quality scoring; produce **photos** (see below).
+
+### Produce photos (inspection evidence)
+Attach images to a **delivery** (the actual produce that arrived) so the Inspector
+can inspect/grade from photos and keep an evidence trail behind the price.
+Recommended: **Supabase Storage** (already in the stack) with a private bucket +
+signed URLs; a `delivery_photos` table (`delivery_id`, object key/url, uploaded_by,
+created_at); validate type/size; upload from the grading step. ~1–2 days.
+
+### Sequencing
+- **Now (demo quick wins):** Admin user-management actions; Inspector grade
+  note + a basic Quality view. Small, cross-stack (migration + endpoint + UI),
+  but high differentiation.
+- **Roadmap:** impersonation, platform analytics, feedback/feature boards,
+  multi-tenancy/billing (Admin); photos, quarantine, per-farmer quality scoring
+  (Inspector); password-reset + unique per-customer credentials (commercialization).

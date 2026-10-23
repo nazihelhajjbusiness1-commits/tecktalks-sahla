@@ -9,7 +9,7 @@ services:
     plan: free
     # Pick the region closest to your Supabase project to cut DB latency.
     region: oregon
-    branch: develop
+    branch: main
     rootDir: backend          # build context = backend/; uses backend/Dockerfile
     autoDeploy: true
     envVars:

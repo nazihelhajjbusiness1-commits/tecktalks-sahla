@@ -39,12 +39,12 @@ export function StatCard({
         : null
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-card transition-shadow hover:shadow-raised">
+    <div className="lift rounded-lg border border-border bg-card p-5 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <span
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-md',
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
             toneStyles[tone].iconWrap,
           )}
         >

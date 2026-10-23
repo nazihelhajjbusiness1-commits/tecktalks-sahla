@@ -9,52 +9,90 @@
 Farmer → Delivery → Weight → Grading → Pricing → Inventory → Farmer Payment
 ```
 
-This repository is a **monorepo** containing the frontend, the (upcoming)
-backend, infrastructure, and documentation.
+This repository is a **monorepo** containing a Spring Boot backend, a React
+frontend, local infrastructure, and documentation.
 
 ---
+
+## Table of contents
+
+1. [What problem it solves](#what-problem-it-solves)
+2. [How it works (the core flow)](#how-it-works-the-core-flow)
+3. [User roles](#user-roles)
+4. [Tech stack](#tech-stack)
+5. [Repository structure](#repository-structure)
+6. [Getting started](#getting-started)
+7. [Seed & demo data](#seed--demo-data)
+8. [Testing](#testing)
+9. [Deployment](#deployment)
+10. [Documentation](#documentation)
+11. [Team & contributions](#team--contributions)
+
+---
+
+## What problem it solves
+
+A produce collection center (a cooperative buying point) receives crops from
+many farmers every day. Today most of them run this on **paper**: who delivered
+what, how much it weighed, what quality grade it was, what price that grade earns,
+how much is owed, and what's been paid. That leads to disputes, slow payments,
+and no visibility.
+
+Sahla digitizes that entire chain so a cooperative can trace **every kilo from
+the farm gate to the farmer's payment**, with clear separation of duties (the
+person who receives goods is not the person who grades or pays for them).
+
+## How it works (the core flow)
+
+1. **Delivery** — a farmer arrives; the center records who delivered what.
+2. **Weight** — the produce is weighed (gross − tare = net kilos).
+3. **Grading** — a quality inspector assigns a grade (A / B / C / Reject).
+4. **Pricing** — each product + grade has a price rule, so grade × weight = value.
+5. **Inventory** — confirmed produce is added to on-hand stock.
+6. **Settlement & payment** — the amount owed is calculated, then paid (full or
+   partial), tracked in an append-only ledger. USD and LBP are kept separate.
+
+Managers and admins watch the whole operation through a **dashboard**, four
+**reports** (daily collection, outstanding payments, inventory, farmer
+statement), and an **audit trail**.
+
+## User roles
+
+Access is enforced at the API (`SecurityConfig`) and mirrored in the UI — each
+role only sees the sections it can actually use.
+
+| Role | What they do | Can access |
+|------|--------------|-----------|
+| **Administrator** | Everything a manager can, **plus** managing user accounts. | All sections + user management |
+| **Cooperative Manager** | Runs the operation: farmers, products, prices, deliveries, settlements, payments, oversight. | All sections except user management |
+| **Receiving Employee** | Intake clerk: registers farmers, logs deliveries, records weights. | Farmers, Deliveries |
+| **Quality Inspector** | Grades the quality of each delivery (grade sets the price). | Deliveries (read + grade) |
+| **Accountant** | Settlements, payments, and financial reporting. | Dashboard, Farmers, Deliveries, Inventory, Payments, Reports |
+| **Warehouse Employee** | Inventory and stock-level reporting. | Deliveries, Inventory, Reports |
+
+## Tech stack
+
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router v7
+- **Backend:** Java 21, Spring Boot, Spring Security (JWT), Flyway migrations
+- **Database:** PostgreSQL
+- **Infra:** Docker Compose (local), GitHub Actions CI
+- **Deploy:** Render (backend) · Vercel (frontend) · Supabase (Postgres)
 
 ## Repository structure
 
 ```
 .
-├── backend/     # Spring Boot REST API (planned — see backend/README.md)
-├── frontend/    # React + TypeScript + Vite + Tailwind app (Week 1 foundation)
-├── infra/       # Local/dev infrastructure
-│   └── docker-compose.yml   # PostgreSQL + backend + frontend
-├── docs/        # Architecture, domain model, API contracts, decisions
-├── .env.example # Environment template (copy to .env)
+├── backend/     # Spring Boot REST API (Java 21) — auth, deliveries, settlement,
+│                #   ledger/payments, inventory, dashboard, reports, audit
+├── frontend/    # React + TypeScript + Vite + Tailwind single-page app
+├── infra/       # Local dev infrastructure (docker-compose.yml)
+├── docs/        # Market-readiness, security review, regression/QA checklist
+├── render.yaml  # Render deployment blueprint for the backend
 └── README.md    # You are here
 ```
 
-Each part has its own README:
-
-- **[`frontend/`](frontend/README.md)** — the full application: design system,
-  component kit, screens, routing, mock data, and how to run it.
-- **[`backend/`](backend/README.md)** — planned Spring Boot API and its
-  endpoint contracts.
-- **[`docs/`](docs/README.md)** — project documentation.
-
----
-
-## Status
-
-| Part | Status |
-|------|--------|
-| Frontend | **Sprint 5 — client-ready.** Real dashboard + four report screens, admin user management, permission-aware UI, Sahla branding. |
-| Backend | **Sprint 5 — MVP complete.** Full delivery→payment flow plus dashboard statistics, reporting APIs, extended audit trail, finalized role matrix, and auth hardening (refresh tokens, logout, 429 lockout). |
-| Infra | Postgres + backend + frontend via Docker Compose; env-driven, no committed secrets. |
-
-The frontend talks to the real backend by default (`VITE_USE_MOCKS=false`);
-mock mode remains available for offline UI work.
-
-### Sprint 5 docs
-- **[`docs/security-review.md`](docs/security-review.md)** — security posture,
-  what was hardened, and the remaining recommendations.
-- **[`docs/regression-checklist.md`](docs/regression-checklist.md)** — deploy /
-  restart runbook, demo-data step, and the repeatable demo + role-matrix checklist.
-- **Demo data:** load the worked Lebanese scenario (idempotent) with
-  `docker exec -i sahla-db psql -U sahla -d sahla < backend/src/main/resources/db/demo/demo-seed.sql`.
+Each major part has its own README: [`backend/`](backend/README.md),
+[`frontend/`](frontend/README.md), [`docs/`](docs/README.md).
 
 ---
 
@@ -66,7 +104,21 @@ mock mode remains available for offline UI work.
 cp .env.example .env   # then edit values as needed
 ```
 
-### 2. Frontend (runs standalone on mock data)
+### 2. Backend (Spring Boot API)
+
+Requires **JDK 21** (`JAVA_HOME` set) and a PostgreSQL database.
+
+```bash
+cd backend
+cp .env.example .env    # set DB_* and a JWT_SECRET of at least 32 chars
+./mvnw spring-boot:run  # http://localhost:8080  (Swagger UI at /swagger-ui.html)
+```
+
+Flyway applies the schema and seed migrations automatically on first startup —
+an empty database is ready to use with no manual SQL (see
+[Seed & demo data](#seed--demo-data)).
+
+### 3. Frontend (React SPA)
 
 ```bash
 cd frontend
@@ -74,84 +126,129 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-Demo login: any email + password works; use `wrong@demo` to preview the
-invalid-credentials state. See [`frontend/README.md`](frontend/README.md) for
-full details.
+The frontend is controlled by two env vars (in `frontend/.env.local`):
 
-### 3. Database (optional, via Docker)
+| Var | Purpose |
+|-----|---------|
+| `VITE_API_URL` | Base URL of the backend API, including `/api` (e.g. `http://localhost:8080/api`). |
+| `VITE_USE_MOCKS` | `true` = run on bundled mock data, no backend needed (offline UI work). `false` = call the real backend. |
+
+- **With `VITE_USE_MOCKS=true`:** any email + password logs you in (use
+  `wrong@demo` to preview the error state). No backend required.
+- **With `VITE_USE_MOCKS=false`:** only real seeded accounts work (see below).
+
+### 4. Everything via Docker (optional)
 
 ```bash
 cd infra
-docker compose --env-file ../.env up db
+docker compose --env-file ../.env up
 ```
 
-The `backend` and `frontend` Docker services are defined in
-[`infra/docker-compose.yml`](infra/docker-compose.yml) and become runnable once
-their Dockerfiles are added.
+---
 
-### 4. Backend (Spring Boot API)
+## Seed & demo data
 
-Requires **JDK 21** (set `JAVA_HOME`) and a PostgreSQL database. Copy the
-backend env template and fill in the values:
-
-```bash
-cd backend
-cp .env.example .env    # set DB_* and a JWT_SECRET of at least 32 chars
-./mvnw spring-boot:run  # starts on http://localhost:8080 (Swagger at /swagger-ui.html)
-```
-
-Flyway applies the schema (`V1`–`V6`), dev seed data (`V7`) and demo login
-accounts (`V8`) automatically on startup, so a fresh, empty database is ready to
-use with no manual SQL.
+**Automatic (Flyway, on first backend boot):**
+- `V7` seeds base data — 12 farmers, 4 products, grade definitions, price rules.
+- `V8` seeds the demo login accounts below.
 
 **Seeded demo accounts** (all with password `Password123`):
 
-| Email | Role | Notes |
-|-------|------|-------|
-| `admin@sahla.lb` | ADMIN | Full access |
-| `manager@sahla.lb` | MANAGER | Sprint Review demo account |
-| `receiving@sahla.lb` | RECEIVING_EMPLOYEE | Can create/search farmers |
-| `inspector@sahla.lb` | INSPECTOR | Read-only (for permission testing) |
+| Email | Role |
+|-------|------|
+| `admin@sahla.lb` | Administrator |
+| `manager@sahla.lb` | Cooperative Manager |
+| `receiving@sahla.lb` | Receiving Employee |
+| `inspector@sahla.lb` | Quality Inspector |
 
-**Running the test suite** (integration tests use Testcontainers, so
-**Docker must be running** — no local DB setup needed; each run spins up its own
-PostgreSQL and cleans up after itself):
+**Rich demo dataset (manual, optional):** to populate a full worked scenario
+(~45 deliveries over the last month, settlements, ~34 payments, multi-product
+inventory with dispatch/spoilage), run
+[`backend/src/main/resources/db/demo/demo-seed.sql`](backend/src/main/resources/db/demo/demo-seed.sql)
+against the database. It is **idempotent and self-cleaning** (re-run to reset):
 
 ```bash
-cd backend
-./mvnw test             # 43 integration tests across farmers, products, grades, pricing + security
+# Local Docker Postgres:
+docker exec -i sahla-db psql -U sahla -d sahla < backend/src/main/resources/db/demo/demo-seed.sql
+# Or paste the file into the Supabase SQL Editor and Run.
 ```
 
 ---
 
-## Tech stack
+## Testing
 
-- **Frontend:** React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
-- **Backend (planned):** Java, Spring Boot, PostgreSQL, JWT auth
-- **Infra:** Docker Compose
+```bash
+# Backend — integration tests (Testcontainers, so Docker must be running;
+# each run spins up its own throwaway PostgreSQL):
+cd backend && ./mvnw test        # 80+ integration tests across ~10 suites
+
+# Frontend — unit tests + typecheck + lint:
+cd frontend
+npm test
+npm run build                    # tsc typecheck + production build
+npm run lint
+```
+
+GitHub Actions CI (`.github/workflows/ci.yml`) runs the backend `verify` and the
+frontend typecheck/lint/test/build on every PR.
 
 ---
 
-## Git workflow
+## Deployment
 
-Two long-lived branches:
+Production runs on free-tier managed services:
 
-- **`main`** — stable, release-ready code.
-- **`develop`** — active integration branch. Feature branches are cut from and
-  merged back into `develop`.
+- **Backend → Render** (Docker web service; blueprint in `render.yaml`).
+- **Frontend → Vercel** (Vite static build; config in `frontend/vercel.json`).
+- **Database → Supabase** (PostgreSQL; use the Session-pooler connection string).
+
+Key production env vars: backend needs `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`,
+`JWT_SECRET` (≥32 chars), `APP_CORS_ALLOWED_ORIGINS` (the Vercel origin); frontend
+needs `VITE_API_URL` and `VITE_USE_MOCKS`. See
+[`docs/regression-checklist.md`](docs/regression-checklist.md) for the full
+deploy/restart runbook. Note: Render's free tier spins down after ~15 min idle
+(~60s cold start on the next request).
+
+---
+
+## Documentation
+
+- **[`docs/market-readiness.md`](docs/market-readiness.md)** — what's done and
+  the prioritized gaps (security, infra, UX) before a real launch.
+- **[`docs/security-review.md`](docs/security-review.md)** — security posture,
+  what was hardened, remaining recommendations.
+- **[`docs/regression-checklist.md`](docs/regression-checklist.md)** —
+  deploy/restart runbook, demo-data step, repeatable demo + role-matrix checklist.
+
+### Known limitations (MVP)
+- JWT is stored in `localStorage` (convenient, but XSS-readable) — a hardening item.
+- Payments/settlements are immutable; no reversal/adjustment flow yet.
+- English-only, left-to-right (Arabic/RTL is planned).
+- Single-tenant: one cooperative per deployment (multi-tenancy is future work).
+
+---
+
+## Team & contributions
+
+Built by a four-person team. Commit counts are from `git shortlog`; please refine
+the "area" column to match each member's actual contribution.
+
+| Contributor | Commits | Primary area |
+|-------------|:------:|--------------|
+| Nazih El Hajj | 53 | Frontend app, financial workflow, Sprint 5 (dashboard/reports/auth hardening), deployment |
+| Aman Sayrawan | 44 | Sprint 3 delivery intake (weigh/grade/confirm) |
+| Moustafa Hashem | 18 | Sprint 2 backend & fixes |
+| Ahmad Armoush | 9 | Backend / integration tests |
+
+### Git workflow
+`main` is the primary, deploy-tracking branch. Cut a feature branch, do the work,
+and merge back to `main`:
 
 ```bash
-git checkout develop
+git checkout main
 git checkout -b feature/short-description
-# …work…
-git push -u origin feature/short-description   # open a PR into develop
+# …work…  then open a PR into main
 ```
 
-## Contributing
-
-1. Branch off `develop`.
-2. Keep code strongly typed (avoid `any`) and reuse the existing frontend
-   component kit instead of duplicating UI.
-3. From `frontend/`, run `npm run lint` and `npm run build` before opening a PR
-   — both must pass.
-4. Follow the design system; prefer semantic tokens over raw colors.
+Before opening a PR: from `frontend/` run `npm run lint` and `npm run build`
+(both must pass); for backend changes run `./mvnw test`.

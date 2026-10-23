@@ -82,7 +82,7 @@ export function LoginPage() {
       <main className="flex items-center justify-center bg-background px-4 py-10 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
-            <Logo />
+            <Logo full className="h-16" />
           </div>
 
           <div className="mb-6">

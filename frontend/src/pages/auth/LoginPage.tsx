@@ -5,14 +5,13 @@ import { Button, Input, Alert } from '@/components/common'
 import { Logo } from '@/components/layout/Logo'
 import { useAuth } from '@/hooks/useAuth'
 import { brand } from '@/config/brand'
+import { homePathForRole, isPathAllowedForRole } from '@/config/nav'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from =
-    (location.state as { from?: Location } | null)?.from?.pathname ??
-    '/dashboard'
+  const from = (location.state as { from?: Location } | null)?.from?.pathname
 
   const [identifier, setIdentifier] = useState('rania.aoun@sahla.app')
   const [password, setPassword] = useState('')
@@ -25,8 +24,14 @@ export function LoginPage() {
     setError(null)
     setLoading(true)
     try {
-      await login({ identifier, password })
-      navigate(from, { replace: true })
+      const user = await login({ identifier, password })
+      // Honour where they were headed, but only if their role can open it;
+      // otherwise send them to the first section their role can use.
+      const destination =
+        from && isPathAllowedForRole(from, user.role)
+          ? from
+          : homePathForRole(user.role)
+      navigate(destination, { replace: true })
     } catch (err) {
       setError(
         err instanceof Error

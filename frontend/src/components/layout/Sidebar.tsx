@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import { navItems } from '@/config/nav'
+import { navItemsForRole } from '@/config/nav'
+import { useAuth } from '@/hooks/useAuth'
 import { Logo } from './Logo'
 
 interface SidebarProps {
@@ -26,6 +27,9 @@ export function Sidebar({
   onNavigate,
   hideCollapseToggle = false,
 }: SidebarProps) {
+  const { user } = useAuth()
+  const items = user ? navItemsForRole(user.role) : []
+
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-primary to-primary-hover text-on-primary">
       <div
@@ -41,7 +45,7 @@ export function Sidebar({
         className="flex-1 space-y-1 overflow-y-auto scrollbar-thin px-3 py-4"
         aria-label="Primary"
       >
-        {navItems.map(({ label, to, icon: Icon }) => (
+        {items.map(({ label, to, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

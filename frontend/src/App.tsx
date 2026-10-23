@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/hooks/useAuth'
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
+import { RoleRoute } from '@/components/routing/RoleRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
@@ -30,6 +31,7 @@ function App() {
           {/* Authenticated area */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
+              <Route element={<RoleRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/farmers" element={<FarmersPage />} />
@@ -48,6 +50,7 @@ function App() {
                 path="/settings/products/:id"
                 element={<ProductSettingsDetailPage />}
               />
+              </Route>
             </Route>
           </Route>
 

@@ -18,7 +18,7 @@ import { authService } from '@/services/authService'
 interface AuthContextValue {
   user: User | null
   isAuthenticated: boolean
-  login: (credentials: Credentials) => Promise<void>
+  login: (credentials: Credentials) => Promise<User>
   logout: () => void
 }
 
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (credentials: Credentials) => {
     const session = await authService.login(credentials)
     setUser(session.user)
+    return session.user
   }, [])
 
   const logout = useCallback(() => {

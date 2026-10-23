@@ -84,7 +84,7 @@ export function DashboardPage() {
       )}
 
       {/* Summary cards — all values come from the backend, never hardcoded. */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="rise-children grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           label="Today's Deliveries"
           value={loading || !data ? '—' : formatNumber(data.todaysDeliveries)}

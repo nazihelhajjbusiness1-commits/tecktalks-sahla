@@ -13,6 +13,7 @@ import {
   FileBarChart,
   Settings,
   ClipboardCheck,
+  UserCog,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
 
@@ -30,6 +31,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'accountant'] },
+  { label: 'Users', to: '/users', icon: UserCog, roles: ['admin'] },
   { label: 'Quality', to: '/quality', icon: ClipboardCheck, roles: ['admin', 'manager', 'inspector'] },
   { label: 'Farmers', to: '/farmers', icon: Users, roles: ['admin', 'manager', 'receiving', 'accountant'] },
   { label: 'Deliveries', to: '/deliveries', icon: Truck, roles: ['admin', 'manager', 'receiving', 'accountant', 'warehouse', 'inspector'] },

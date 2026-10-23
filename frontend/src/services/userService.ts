@@ -45,6 +45,11 @@ export const userService = {
       json: { newPassword },
     })
   },
+
+  /** Delete a user account (backend blocks it if the user has activity). */
+  async remove(id: number): Promise<void> {
+    await request(`/auth/users/${id}`, { method: 'DELETE' })
+  },
 }
 
 /** Human-readable labels for the backend roles. */

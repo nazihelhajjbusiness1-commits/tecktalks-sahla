@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import {
-  Users,
   ShieldCheck,
   Package,
   Star,
@@ -29,7 +28,6 @@ const settings: SettingDef[] = [
   { key: 'products', title: 'Products', description: 'Crops, produce, grades and pricing.', icon: Package, to: '/settings/products' },
   { key: 'grades', title: 'Grades', description: 'Quality grades, managed per product.', icon: Star, to: '/settings/products' },
   { key: 'pricing', title: 'Pricing', description: 'Grade-based price lists per product.', icon: DollarSign, to: '/settings/products' },
-  { key: 'users', title: 'Users', description: 'Manage staff accounts and access.', icon: Users, to: '/settings/users', adminOnly: true },
   { key: 'roles', title: 'Roles & Permissions', description: 'Define what each role can do.', icon: ShieldCheck },
   { key: 'coop', title: 'Cooperative Settings', description: 'Organization details and preferences.', icon: Building2 },
 ]

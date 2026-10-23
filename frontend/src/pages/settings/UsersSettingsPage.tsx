@@ -128,7 +128,7 @@ export function UsersSettingsPage() {
         return (
           <div className="flex items-center justify-end gap-2">
             <Button
-              variant={u.status === 'ACTIVE' ? 'danger' : 'outline'}
+              variant="outline"
               size="sm"
               loading={busy}
               disabled={isSelf}
@@ -149,6 +149,22 @@ export function UsersSettingsPage() {
               onClick={() => setResetUser(u)}
             >
               Reset password
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={busy || isSelf}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Delete ${u.firstname} ${u.lastname}? This cannot be undone. If the user has activity on record, deactivate them instead.`,
+                  )
+                ) {
+                  runAction(u.id, () => userService.remove(u.id))
+                }
+              }}
+            >
+              Delete
             </Button>
           </div>
         )

@@ -34,6 +34,7 @@ function App() {
             <Route element={<AppLayout />}>
               <Route element={<RoleRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/users" element={<UsersSettingsPage />} />
               <Route path="/quality" element={<QualityPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/farmers" element={<FarmersPage />} />
@@ -46,7 +47,7 @@ function App() {
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/settings/users" element={<UsersSettingsPage />} />
+              <Route path="/settings/users" element={<Navigate to="/users" replace />} />
               <Route path="/settings/products" element={<ProductsSettingsPage />} />
               <Route
                 path="/settings/products/:id"

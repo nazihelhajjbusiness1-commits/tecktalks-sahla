@@ -39,6 +39,10 @@ public class User {
     @Column(nullable = false, length = 30)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserStatus status = UserStatus.ACTIVE;
+
     public Long getId() {
         return id;
     }
@@ -111,7 +115,13 @@ public class User {
         this.role = role;
     }
 
+    public UserStatus getStatus() {
+        return status;
+    }
 
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
 
 }
 

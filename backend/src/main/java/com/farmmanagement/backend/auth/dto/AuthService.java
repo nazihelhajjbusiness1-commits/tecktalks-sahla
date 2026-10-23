@@ -8,6 +8,7 @@ import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.common.exception.RateLimitedException;
 import com.farmmanagement.backend.users.User;
 import com.farmmanagement.backend.users.UserRepository;
+import com.farmmanagement.backend.users.UserStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
@@ -101,6 +102,11 @@ public class AuthService {
 
         loginRateLimiter.reset(key);
 
+        if (user.getStatus() == UserStatus.DISABLED) {
+            throw new AuthenticationException(
+                    "Your account has been disabled. Contact an administrator.");
+        }
+
         return issueTokens(user);
     }
 
@@ -116,6 +122,10 @@ public class AuthService {
         User user = userRepository
                 .findByEmail(jwtService.extractEmail(refreshToken))
                 .orElseThrow(() -> new AuthenticationException("Invalid or expired refresh token"));
+
+        if (user.getStatus() == UserStatus.DISABLED) {
+            throw new AuthenticationException("Invalid or expired refresh token");
+        }
 
         String access = jwtService.generateAccessToken(user.getEmail(), user.getRole());
         return new AuthResponse(access, refreshToken);

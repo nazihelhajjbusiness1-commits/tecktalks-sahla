@@ -1,6 +1,7 @@
 package com.farmmanagement.backend.users.dto;
 
 import com.farmmanagement.backend.auth.Role;
+import com.farmmanagement.backend.users.UserStatus;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private Role role;
+    private UserStatus status;
     private LocalDateTime createdAt;
 
     public UserResponse(
@@ -23,6 +25,7 @@ public class UserResponse {
             String email,
             String phoneNumber,
             Role role,
+            UserStatus status,
             LocalDateTime createdAt
     ) {
         this.id = id;
@@ -32,6 +35,7 @@ public class UserResponse {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.role = role;
+        this.status = status;
         this.createdAt = createdAt;
     }
 
@@ -61,6 +65,10 @@ public class UserResponse {
 
     public Role getRole() {
         return role;
+    }
+
+    public UserStatus getStatus() {
+        return status;
     }
 
     public LocalDateTime getCreatedAt() {

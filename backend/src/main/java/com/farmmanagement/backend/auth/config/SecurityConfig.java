@@ -231,8 +231,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/audit/**")
                         .hasAnyRole("ADMIN", "MANAGER")
 
-                        // Admin-only user listing (login stays public above).
+                        // Admin-only user listing + management (login stays public above).
                         .requestMatchers(HttpMethod.GET, "/api/auth/users")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/users/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/auth/users/**")
                         .hasRole("ADMIN")
 
                         // Inventory reads: warehouse + management/accounting roles.

@@ -117,9 +117,78 @@ signed URLs; a `delivery_photos` table (`delivery_id`, object key/url, uploaded_
 created_at); validate type/size; upload from the grading step. ~1–2 days.
 
 ### Sequencing
-- **Now (demo quick wins):** Admin user-management actions; Inspector grade
-  note + a basic Quality view. Small, cross-stack (migration + endpoint + UI),
-  but high differentiation.
+- **Done (demo quick wins):** Inspector grade note + Quality dashboard
+  (grade distribution + reject rate), the inspector's landing page. Admin
+  user-management actions are the remaining quick win.
 - **Roadmap:** impersonation, platform analytics, feedback/feature boards,
   multi-tenancy/billing (Admin); photos, quarantine, per-farmer quality scoring
   (Inspector); password-reset + unique per-customer credentials (commercialization).
+
+---
+
+## Multi-tenancy — the headline commercialization plan
+
+**This is the #1 thing standing between the product and selling it as a service
+to multiple companies.** It is deliberately **out of scope for the MVP** and
+planned as a dedicated, tested effort afterwards (see risk note below).
+
+### The problem
+The platform is currently **100% single-tenant**: there is no company /
+organization concept, and **no table has a `company_id`**. Every user, farmer,
+product, delivery, settlement, payment, inventory movement and inspector lives in
+one global pool. So the only way to serve two companies today is **two separate
+deployments** (two databases). To host many cooperatives on one platform, every
+piece of data needs an owner.
+
+A concrete symptom: **inspectors (and all users) aren't tied to a company.** A
+cooperative should be able to have several of its own inspectors grading only its
+own produce, with no visibility into any other company's data.
+
+### Chosen model
+**Shared database, shared schema, `company_id` column** (row-level tenancy) — the
+standard SaaS pattern: one database, cheapest to run, every tenant table carries a
+`company_id` and every query is filtered by the logged-in user's company.
+(Schema-per-tenant and database-per-tenant were considered and rejected as
+unnecessary operational overhead for this stage.)
+
+### Design
+1. **`companies` table** — `id, name, slug, status, created_at` (one row per
+   cooperative).
+2. **Add `company_id` FK** to the top-level tenant tables: `users`, `farmers`,
+   `products`, `grade_definitions`, `price_rules`, `deliveries`,
+   `farmer_settlements`, `farmer_payments`, `farmer_ledger_entries`,
+   `inventory_movements`, `audit_logs`. Child tables (`delivery_weights`,
+   `delivery_grades`, …) inherit tenancy through their parent delivery.
+3. **Auth carries the tenant** — on login, add `company_id` to the JWT claims; a
+   request-scoped "current company" is read from the token on every request.
+4. **Enforce isolation** (critical — a bug here means one company sees another's
+   data): a **Hibernate tenant filter** auto-applied to every query from the JWT
+   `company_id`, and/or **Postgres Row-Level Security (RLS)** as defense-in-depth.
+   Backed by tests that prove cross-tenant reads return nothing.
+5. **Role re-framing** (ties into the Admin/Inspector redesign above):
+   - **Platform Super-Admin** — the SaaS provider; not tied to a company, can
+     cross tenants for support/impersonation.
+   - **Company Admin** — per-cooperative owner; manages only their company's
+     users and settings.
+   - Manager / Inspector / Receiving / Accountant / Warehouse — all **scoped to
+     one company**. "Multiple inspectors per company" = multiple `INSPECTOR`
+     users sharing a `company_id`; the Quality dashboard filters by company.
+6. **Onboarding + data migration** — a "create company + its first admin" flow;
+   and a migration that creates a default company and assigns all existing rows to
+   it so current data survives the transition.
+
+### Implementation phases
+1. **Schema** — `companies` table + `company_id` columns + default-company backfill.
+2. **Auth** — `company_id` in the JWT + current-company resolution.
+3. **Enforcement** — tenant filter / RLS on every query, with isolation tests.
+4. **Roles / onboarding** — super-admin vs company admin; create-company flow.
+5. **UI** — company context throughout; a company switcher for the super-admin.
+
+### Risk & sequencing note
+This is the largest change in the codebase — it touches every table and every
+query, and the enforcement layer is where a defect leaks data across companies
+(the worst SaaS failure mode). It should **not** be rushed in before the MVP
+evaluation, which has a working single-tenant demo. The MVP position is defensible
+as **"one deployment per cooperative"** — a legitimate early-stage SaaS model —
+with multi-tenancy as the clearly-planned next step documented here. Build it on a
+dedicated branch, with the isolation layer verified, after the evaluation.

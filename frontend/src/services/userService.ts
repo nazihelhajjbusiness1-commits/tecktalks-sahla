@@ -1,4 +1,8 @@
-import type { CreateStaffUserRequest, StaffUser } from '@/types'
+import type {
+  CreateStaffUserRequest,
+  StaffUser,
+  UpdateStaffUserRequest,
+} from '@/types'
 import { request } from './api'
 
 /** Backend wraps these payloads in ApiResponse<T> { success, message, data }. */
@@ -23,6 +27,23 @@ export const userService = {
       json: body,
     })
     return res.data
+  },
+
+  /** Change a user's role and/or active status. */
+  async update(id: number, body: UpdateStaffUserRequest): Promise<StaffUser> {
+    const res = await request<ApiEnvelope<StaffUser>>(`/auth/users/${id}`, {
+      method: 'PATCH',
+      json: body,
+    })
+    return res.data
+  },
+
+  /** Set a new password for a user account. */
+  async resetPassword(id: number, newPassword: string): Promise<void> {
+    await request(`/auth/users/${id}/reset-password`, {
+      method: 'POST',
+      json: { newPassword },
+    })
   },
 }
 

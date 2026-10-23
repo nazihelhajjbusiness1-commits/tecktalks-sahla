@@ -47,6 +47,9 @@ export type BackendRole =
   | 'INSPECTOR'
 
 /** Mirrors the backend UserResponse DTO. */
+/** Account state (admin user management). */
+export type UserStatus = 'ACTIVE' | 'DISABLED'
+
 export interface StaffUser {
   id: number
   firstname: string
@@ -55,7 +58,14 @@ export interface StaffUser {
   email: string
   phoneNumber?: string | null
   role: BackendRole
+  status: UserStatus
   createdAt: string
+}
+
+/** Admin partial update of a staff account (role and/or status). */
+export interface UpdateStaffUserRequest {
+  role?: BackendRole
+  status?: UserStatus
 }
 
 /** Mirrors the backend RegisterRequest DTO (admin creates staff accounts). */

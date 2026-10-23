@@ -125,6 +125,22 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("User updated", toResponse(updated)));
     }
 
+    /** Admin: delete a user account (blocked if it has activity on record). */
+    @DeleteMapping("/users/{id}")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        User current = authService.getCurrentUser(authentication.getName());
+        if (current.getId().equals(id)) {
+            throw new ConflictException("You cannot delete your own account.");
+        }
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted", null));
+    }
+
     /** Admin: set a new password for a user account. */
     @PostMapping("/users/{id}/reset-password")
     @SecurityRequirement(name = "bearerAuth")

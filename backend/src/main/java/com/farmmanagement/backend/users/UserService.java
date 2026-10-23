@@ -1,7 +1,9 @@
 package com.farmmanagement.backend.users;
 
 import com.farmmanagement.backend.auth.Role;
+import com.farmmanagement.backend.common.exception.ConflictException;
 import com.farmmanagement.backend.common.exception.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,5 +49,25 @@ public class UserService {
         User user = getUserById(id);
         user.setPassword(passwordEncoder.encode(newRawPassword));
         return userRepository.save(user);
+    }
+
+    /**
+     * Admin delete of a user account. A user who has activity on record
+     * (deliveries weighed/graded, settlements confirmed, payments recorded…) is
+     * referenced by foreign keys and cannot be hard-deleted without destroying
+     * that history — those should be deactivated instead. We flush so the FK
+     * violation surfaces here as a clear conflict rather than a generic error.
+     */
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = getUserById(id);
+        try {
+            userRepository.delete(user);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException(
+                    "This user has records on the platform and can't be deleted. "
+                            + "Deactivate the account instead.");
+        }
     }
 }

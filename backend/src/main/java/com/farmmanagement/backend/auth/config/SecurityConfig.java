@@ -241,6 +241,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/users/**")
                         .hasRole("ADMIN")
 
+                        .requestMatchers(HttpMethod.DELETE, "/api/auth/users/**")
+                        .hasRole("ADMIN")
+
                         // Inventory reads: warehouse + management/accounting roles.
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**")
                         .hasAnyRole("ADMIN", "MANAGER", "WAREHOUSE_EMPLOYEE", "ACCOUNTANT")

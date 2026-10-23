@@ -51,8 +51,8 @@ export function LoginPage() {
             backgroundSize: '48px 48px',
           }}
         />
-        <div className="relative self-start rounded-2xl bg-white p-4 shadow-raised ring-1 ring-black/5">
-          <Logo full className="h-16 w-auto" />
+        <div className="relative w-full rounded-2xl bg-white p-8 shadow-raised ring-1 ring-black/5">
+          <Logo full className="mx-auto h-auto w-full max-w-sm" />
         </div>
         <div className="relative max-w-md">
           <h2 className="font-heading text-3xl font-semibold leading-tight">

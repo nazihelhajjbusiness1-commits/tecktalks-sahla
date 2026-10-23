@@ -43,19 +43,18 @@ export function LoginPage() {
       {/* Brand panel — the full Sahla logo over the context copy; hidden on small screens */}
       <aside className="hidden overflow-hidden bg-white p-10 lg:flex lg:flex-col lg:justify-center xl:p-16">
         <Logo full className="w-full max-w-md" />
-        <div className="mt-10 max-w-md">
-          <h2 className="font-heading text-3xl font-semibold leading-tight text-foreground">
+        <div className="mt-10 flex max-w-xl flex-col gap-8 lg:flex-row lg:items-center lg:gap-10">
+          <h2 className="font-heading text-2xl font-semibold leading-tight text-foreground lg:flex-1">
             From delivery to payment, one place to run your collection center.
           </h2>
-          <p className="mt-4 text-muted-foreground">{brand.description}</p>
-          <ul className="mt-8 space-y-3 text-sm text-foreground/80">
+          <ul className="space-y-3 text-sm text-foreground/80 lg:flex-1">
             {[
               'Track every farmer delivery and grade',
               'Keep inventory and payments in sync',
               'Built for cooperatives across Lebanon',
             ].map((line) => (
               <li key={line} className="flex items-center gap-2.5">
-                <Sprout className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
+                <Sprout className="h-4.5 w-4.5 shrink-0 text-primary" aria-hidden="true" />
                 {line}
               </li>
             ))}

@@ -31,16 +31,10 @@ export function Sidebar({
       <div
         className={cn(
           'flex items-center border-b border-on-primary/10',
-          collapsed ? 'h-16 justify-center px-2' : 'h-[88px] px-3',
+          collapsed ? 'h-16 justify-center px-2' : 'h-[88px] px-5',
         )}
       >
-        {collapsed ? (
-          <Logo inverted markOnly />
-        ) : (
-          <div className="flex w-full items-center justify-center rounded-lg bg-white p-2.5 shadow-card ring-1 ring-black/5">
-            <Logo full className="h-16 w-auto" />
-          </div>
-        )}
+        {collapsed ? <Logo inverted markOnly /> : <Logo inverted />}
       </div>
 
       <nav

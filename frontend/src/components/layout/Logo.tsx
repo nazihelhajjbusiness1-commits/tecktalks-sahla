@@ -39,8 +39,8 @@ export function Logo({
   }
 
   return (
-    <div className={cn('flex items-center gap-2.5', className)}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-0.5 ring-1 ring-black/5">
+    <div className={cn('flex items-center gap-3', className)}>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-card ring-1 ring-black/5">
         <img
           src="/sahla-mark.png"
           alt=""
@@ -54,7 +54,7 @@ export function Logo({
         <span className="flex flex-col leading-none">
           <span
             className={cn(
-              'font-heading text-lg font-semibold tracking-tight',
+              'font-heading text-xl font-bold tracking-tight',
               inverted ? 'text-on-primary' : 'text-foreground',
             )}
           >
@@ -62,8 +62,8 @@ export function Logo({
           </span>
           <span
             className={cn(
-              'mt-0.5 text-[11px]',
-              inverted ? 'text-on-primary/70' : 'text-muted-foreground',
+              'mt-1 text-[11px] font-medium',
+              inverted ? 'text-on-primary/65' : 'text-muted-foreground',
             )}
           >
             {brand.tagline}

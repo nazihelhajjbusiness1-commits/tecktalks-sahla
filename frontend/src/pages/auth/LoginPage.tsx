@@ -51,7 +51,9 @@ export function LoginPage() {
             backgroundSize: '48px 48px',
           }}
         />
-        <Logo inverted />
+        <div className="relative self-start rounded-2xl bg-white p-4 shadow-raised ring-1 ring-black/5">
+          <Logo full className="h-16 w-auto" />
+        </div>
         <div className="relative max-w-md">
           <h2 className="font-heading text-3xl font-semibold leading-tight">
             From delivery to payment, one place to run your collection center.

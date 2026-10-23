@@ -22,6 +22,8 @@ public class DeliveryGradeResponse {
 
     private LocalDateTime gradedAt;
 
+    private String notes;
+
     private DeliveryStatus resultingStatus;
 
     private BigDecimal totalPrice;
@@ -86,6 +88,14 @@ public class DeliveryGradeResponse {
 
     public void setGradedAt(LocalDateTime gradedAt) {
         this.gradedAt = gradedAt;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public DeliveryStatus getResultingStatus() {

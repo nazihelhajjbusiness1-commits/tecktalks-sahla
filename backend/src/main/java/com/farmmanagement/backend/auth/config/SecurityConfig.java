@@ -239,6 +239,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**")
                         .hasAnyRole("ADMIN", "MANAGER", "WAREHOUSE_EMPLOYEE", "ACCOUNTANT")
 
+                        // Quality dashboard: the inspector's surface + management.
+                        .requestMatchers(HttpMethod.GET, "/api/quality/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "INSPECTOR")
+
                         .anyRequest().authenticated()
                 )
 

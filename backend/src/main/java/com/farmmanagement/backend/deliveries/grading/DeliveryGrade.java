@@ -30,6 +30,10 @@ public class DeliveryGrade {
     @Column(name = "graded_at", nullable = false)
     private LocalDateTime gradedAt;
 
+    /** Optional inspector note / reason captured alongside the grade. */
+    @Column(name = "notes", length = 500)
+    private String notes;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -82,6 +86,14 @@ public class DeliveryGrade {
 
     public void setGradedAt(LocalDateTime gradedAt) {
         this.gradedAt = gradedAt;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public LocalDateTime getCreatedAt() {

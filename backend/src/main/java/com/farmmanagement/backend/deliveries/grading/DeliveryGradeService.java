@@ -105,6 +105,7 @@ public class DeliveryGradeService {
         deliveryGrade.setGradeDefinition(gradeDefinition);
         deliveryGrade.setGradedBy(gradedBy);
         deliveryGrade.setGradedAt(LocalDateTime.now());
+        deliveryGrade.setNotes(request.getNotes());
 
         DeliveryGrade saved = deliveryGradeRepository.save(deliveryGrade);
 
@@ -145,6 +146,7 @@ public class DeliveryGradeService {
         response.setGradeName(deliveryGrade.getGradeDefinition().getName());
         response.setGradedBy(formatUserName(deliveryGrade.getGradedBy()));
         response.setGradedAt(deliveryGrade.getGradedAt());
+        response.setNotes(deliveryGrade.getNotes());
         response.setResultingStatus(resultingStatus);
         response.setTotalPrice(totalPrice);
         response.setTotalPriceCurrency(totalPriceCurrency);

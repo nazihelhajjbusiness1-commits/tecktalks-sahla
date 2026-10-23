@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/routing/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
+import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { FarmersPage } from '@/pages/farmers/FarmersPage'
 import { FarmerDetailPage } from '@/pages/farmers/FarmerDetailPage'
 import { DeliveriesPage } from '@/pages/deliveries/DeliveriesPage'
@@ -30,6 +31,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/farmers" element={<FarmersPage />} />
               <Route path="/farmers/:id" element={<FarmerDetailPage />} />
               <Route path="/deliveries" element={<DeliveriesPage />} />

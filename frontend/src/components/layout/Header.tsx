@@ -12,21 +12,75 @@ interface HeaderProps {
   onOpenMobileNav: () => void
 }
 
+interface Notification {
+  id: string
+  title: string
+  detail: string
+  time: string
+  unread: boolean
+}
+
+/**
+ * Sample activity feed. Static for now — wire to a real `/api/notifications`
+ * endpoint later; the popover UI stays the same.
+ */
+const notifications: Notification[] = [
+  {
+    id: 'n1',
+    title: 'New delivery recorded',
+    detail: 'Youssef Haddad · Apple A · 420 kg',
+    time: '10m ago',
+    unread: true,
+  },
+  {
+    id: 'n2',
+    title: 'Settlement awaiting confirmation',
+    detail: 'Rima Khoury · $1,240.00',
+    time: '1h ago',
+    unread: true,
+  },
+  {
+    id: 'n3',
+    title: 'Payment recorded',
+    detail: 'Charbel Sleiman · $500.00',
+    time: '3h ago',
+    unread: true,
+  },
+  {
+    id: 'n4',
+    title: 'Low inventory',
+    detail: 'Orange A is below its reorder level',
+    time: 'Yesterday',
+    unread: false,
+  },
+]
+
 export function Header({ title, onOpenMobileNav }: HeaderProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
+
+  const unreadCount = notifications.filter((n) => n.unread).length
 
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen && !notifOpen) return
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(target)) {
+        setNotifOpen(false)
       }
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false)
+      if (e.key === 'Escape') {
+        setMenuOpen(false)
+        setNotifOpen(false)
+      }
     }
     document.addEventListener('mousedown', onClick)
     document.addEventListener('keydown', onKey)
@@ -34,11 +88,16 @@ export function Header({ title, onOpenMobileNav }: HeaderProps) {
       document.removeEventListener('mousedown', onClick)
       document.removeEventListener('keydown', onKey)
     }
-  }, [menuOpen])
+  }, [menuOpen, notifOpen])
 
   const handleLogout = () => {
     logout()
     navigate('/login', { replace: true })
+  }
+
+  const openProfile = () => {
+    setMenuOpen(false)
+    navigate('/profile')
   }
 
   return (
@@ -74,22 +133,85 @@ export function Header({ title, onOpenMobileNav }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 ms-auto md:ms-3">
-        <button
-          type="button"
-          className="relative flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-          aria-label="Notifications (3 unread)"
-        >
-          <Bell className="h-5 w-5" aria-hidden="true" />
-          <span
-            className="absolute end-2 top-2 h-2 w-2 rounded-full bg-accent ring-2 ring-card"
-            aria-hidden="true"
-          />
-        </button>
+        <div ref={notifRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setNotifOpen((v) => !v)
+              setMenuOpen(false)
+            }}
+            aria-haspopup="menu"
+            aria-expanded={notifOpen}
+            className="relative flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+            aria-label={`Notifications (${unreadCount} unread)`}
+          >
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            {unreadCount > 0 && (
+              <span
+                className="absolute end-2 top-2 h-2 w-2 rounded-full bg-accent ring-2 ring-card"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+
+          {notifOpen && (
+            <div
+              role="menu"
+              className="absolute end-0 mt-2 w-80 overflow-hidden rounded-lg border border-border bg-card shadow-raised motion-safe:animate-[fadeIn_120ms_ease-out]"
+            >
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <p className="text-sm font-semibold text-foreground">
+                  Notifications
+                </p>
+                {unreadCount > 0 && (
+                  <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+
+              <ul className="max-h-96 overflow-y-auto">
+                {notifications.map((n) => (
+                  <li key={n.id}>
+                    <div
+                      className={cn(
+                        'flex gap-3 border-b border-border px-4 py-3 last:border-0',
+                        n.unread && 'bg-primary-soft/30',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'mt-1.5 h-2 w-2 shrink-0 rounded-full',
+                          n.unread ? 'bg-accent' : 'bg-border',
+                        )}
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {n.title}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {n.detail}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground/70">
+                          {n.time}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
         <div ref={menuRef} className="relative">
           <button
             type="button"
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => {
+              setMenuOpen((v) => !v)
+              setNotifOpen(false)
+            }}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             className="flex items-center gap-2 rounded-md p-1 ps-1 pe-2 hover:bg-muted cursor-pointer"
@@ -131,7 +253,7 @@ export function Header({ title, onOpenMobileNav }: HeaderProps) {
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => setMenuOpen(false)}
+                onClick={openProfile}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted cursor-pointer"
               >
                 <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

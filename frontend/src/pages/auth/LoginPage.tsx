@@ -63,9 +63,9 @@ export function LoginPage() {
         </div>
       </aside>
 
-      {/* Form panel */}
-      <main className="flex items-center justify-center bg-background px-4 py-10 sm:px-8">
-        <div className="w-full max-w-sm">
+      {/* Form panel — brand-green backdrop with the form on a white card */}
+      <main className="flex items-center justify-center bg-primary px-4 py-10 sm:px-8">
+        <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-raised sm:p-8">
           <div className="mb-8 lg:hidden">
             <Logo full className="h-16" />
           </div>

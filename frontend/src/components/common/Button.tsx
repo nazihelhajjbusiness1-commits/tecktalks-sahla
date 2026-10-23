@@ -25,17 +25,20 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const base =
   'inline-flex items-center justify-center gap-2 rounded-md font-medium ' +
-  'transition-colors duration-150 focus-visible:outline-2 ' +
-  'focus-visible:outline-offset-2 focus-visible:outline-ring ' +
+  'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ' +
+  'active:translate-y-px ' +
   'disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-on-primary hover:bg-primary-hover shadow-card',
-  secondary: 'bg-secondary text-on-secondary hover:brightness-95 shadow-card',
+  primary:
+    'bg-primary text-on-primary hover:bg-primary-hover shadow-card hover:shadow-raised',
+  secondary:
+    'bg-secondary text-on-secondary hover:brightness-95 shadow-card hover:shadow-raised',
   outline:
     'border border-border bg-card text-foreground hover:bg-muted hover:border-input',
   ghost: 'text-foreground hover:bg-muted',
-  danger: 'bg-danger text-white hover:brightness-95 shadow-card',
+  danger: 'bg-danger text-white hover:brightness-95 shadow-card hover:shadow-raised',
 }
 
 // Min-height keeps touch targets >= 44px on md/lg for tablet use.

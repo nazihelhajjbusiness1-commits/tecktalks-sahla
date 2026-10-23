@@ -27,14 +27,20 @@ export function Sidebar({
   hideCollapseToggle = false,
 }: SidebarProps) {
   return (
-    <div className="flex h-full flex-col bg-primary text-on-primary">
+    <div className="flex h-full flex-col bg-gradient-to-b from-primary to-primary-hover text-on-primary">
       <div
         className={cn(
           'flex h-16 items-center border-b border-on-primary/10',
-          collapsed ? 'justify-center px-2' : 'px-4',
+          collapsed ? 'justify-center px-2' : 'px-3',
         )}
       >
-        <Logo inverted markOnly={collapsed} />
+        {collapsed ? (
+          <Logo inverted markOnly />
+        ) : (
+          <div className="flex h-12 w-full items-center justify-center rounded-lg bg-white px-3 shadow-card ring-1 ring-black/5">
+            <Logo full className="max-h-full w-auto py-1.5" />
+          </div>
+        )}
       </div>
 
       <nav
@@ -49,11 +55,11 @@ export function Sidebar({
             title={collapsed ? label : undefined}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary',
                 collapsed && 'justify-center',
                 isActive
-                  ? 'bg-on-primary/15 text-on-primary'
+                  ? 'bg-on-primary/15 text-on-primary before:absolute before:inset-y-1.5 before:start-0 before:w-1 before:rounded-full before:bg-accent'
                   : 'text-on-primary/75 hover:bg-on-primary/10 hover:text-on-primary',
               )
             }

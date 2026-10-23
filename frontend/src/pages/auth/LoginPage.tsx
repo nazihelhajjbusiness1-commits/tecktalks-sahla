@@ -40,49 +40,33 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      {/* Brand / context panel — hidden on small screens */}
-      <aside className="relative hidden overflow-hidden bg-primary p-10 text-on-primary lg:flex lg:flex-col lg:justify-between">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          aria-hidden="true"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 30%, #fff 1px, transparent 1px), radial-gradient(circle at 70% 60%, #fff 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-        <Logo inverted />
-        <div className="relative max-w-md">
-          <h2 className="font-heading text-3xl font-semibold leading-tight">
+      {/* Brand panel — the full Sahla logo over the context copy; hidden on small screens */}
+      <aside className="hidden overflow-hidden bg-white p-10 lg:flex lg:flex-col lg:justify-center xl:p-16">
+        <Logo full className="w-full max-w-md" />
+        <div className="mt-10 flex max-w-xl flex-col gap-8 lg:flex-row lg:items-center lg:gap-10">
+          <h2 className="font-heading text-2xl font-semibold leading-tight text-foreground lg:flex-1">
             From delivery to payment, one place to run your collection center.
           </h2>
-          <p className="mt-4 text-on-primary/80">
-            {brand.description}
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-on-primary/85">
+          <ul className="space-y-3 text-sm text-foreground/80 lg:flex-1">
             {[
               'Track every farmer delivery and grade',
               'Keep inventory and payments in sync',
               'Built for cooperatives across Lebanon',
             ].map((line) => (
               <li key={line} className="flex items-center gap-2.5">
-                <Sprout className="h-4.5 w-4.5 text-on-primary/70" aria-hidden="true" />
+                <Sprout className="h-4.5 w-4.5 shrink-0 text-primary" aria-hidden="true" />
                 {line}
               </li>
             ))}
           </ul>
         </div>
-        <p className="relative text-xs text-on-primary/60">
-          © {new Date().getFullYear()} {brand.copyrightHolder}. Agricultural
-          cooperative management.
-        </p>
       </aside>
 
-      {/* Form panel */}
-      <main className="flex items-center justify-center bg-background px-4 py-10 sm:px-8">
-        <div className="w-full max-w-sm">
+      {/* Form panel — brand-green backdrop with the form on a white card */}
+      <main className="flex items-center justify-center bg-primary px-4 py-10 sm:px-8">
+        <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-raised sm:p-8">
           <div className="mb-8 lg:hidden">
-            <Logo />
+            <Logo full className="h-16" />
           </div>
 
           <div className="mb-6">

@@ -31,7 +31,7 @@ export function Logo({
       <img
         src="/sahla-logo.png"
         alt={`${brand.name} — ${brand.tagline}`}
-        className={cn('h-auto w-auto select-none', className)}
+        className={cn('block max-w-full select-none', className)}
         width={1074}
         height={728}
       />

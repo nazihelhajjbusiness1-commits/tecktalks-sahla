@@ -15,12 +15,15 @@ interface StatCardProps {
   caption?: string
 }
 
-const toneStyles: Record<StatTone, { iconWrap: string }> = {
-  primary: { iconWrap: 'bg-primary-soft text-primary' },
-  accent: { iconWrap: 'bg-accent-soft text-accent' },
-  success: { iconWrap: 'bg-success-soft text-success' },
-  info: { iconWrap: 'bg-info-soft text-info' },
-  neutral: { iconWrap: 'bg-muted text-muted-foreground' },
+const toneStyles: Record<StatTone, { iconWrap: string; edge: string }> = {
+  primary: { iconWrap: 'bg-primary-soft text-primary', edge: 'before:bg-primary' },
+  accent: { iconWrap: 'bg-accent-soft text-accent', edge: 'before:bg-accent' },
+  success: { iconWrap: 'bg-success-soft text-success', edge: 'before:bg-success' },
+  info: { iconWrap: 'bg-info-soft text-info', edge: 'before:bg-info' },
+  neutral: {
+    iconWrap: 'bg-muted text-muted-foreground',
+    edge: 'before:bg-muted-foreground/40',
+  },
 }
 
 export function StatCard({
@@ -39,7 +42,13 @@ export function StatCard({
         : null
 
   return (
-    <div className="lift rounded-lg border border-border bg-card p-5 shadow-card">
+    <div
+      className={cn(
+        'lift relative overflow-hidden rounded-lg border border-border bg-card p-5 shadow-card',
+        'before:absolute before:inset-y-0 before:start-0 before:w-1 before:content-[""]',
+        toneStyles[tone].edge,
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <span

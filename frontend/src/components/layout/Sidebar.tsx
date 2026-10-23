@@ -30,15 +30,15 @@ export function Sidebar({
     <div className="flex h-full flex-col bg-gradient-to-b from-primary to-primary-hover text-on-primary">
       <div
         className={cn(
-          'flex h-16 items-center border-b border-on-primary/10',
-          collapsed ? 'justify-center px-2' : 'px-3',
+          'flex items-center border-b border-on-primary/10',
+          collapsed ? 'h-16 justify-center px-2' : 'h-[88px] px-3',
         )}
       >
         {collapsed ? (
           <Logo inverted markOnly />
         ) : (
-          <div className="flex h-12 w-full items-center justify-center rounded-lg bg-white px-3 shadow-card ring-1 ring-black/5">
-            <Logo full className="max-h-full w-auto py-1.5" />
+          <div className="flex w-full items-center justify-center rounded-lg bg-white p-2.5 shadow-card ring-1 ring-black/5">
+            <Logo full className="h-16 w-auto" />
           </div>
         )}
       </div>

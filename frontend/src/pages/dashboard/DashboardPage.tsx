@@ -6,6 +6,13 @@ import {
   Wallet,
   Boxes,
   ArrowRight,
+  PackagePlus,
+  UserPlus,
+  CreditCard,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  type LucideIcon,
 } from 'lucide-react'
 import {
   Card,
@@ -18,6 +25,7 @@ import {
   IntakeStatusBadge,
   type Column,
 } from '@/components/common'
+import { IntakeChart } from '@/components/dashboard/IntakeChart'
 import { useAsync } from '@/hooks/useAsync'
 import { dashboardService } from '@/services/dashboardService'
 import { useAuth } from '@/hooks/useAuth'
@@ -66,6 +74,22 @@ export function DashboardPage() {
     { header: 'Date', align: 'end', cell: (d) => formatDate(d.deliveryDate) },
   ]
 
+  const quickActions: {
+    label: string
+    hint: string
+    icon: LucideIcon
+    to: string
+  }[] = [
+    { label: 'Record Delivery', hint: 'Log produce received', icon: PackagePlus, to: '/deliveries' },
+    { label: 'Add Farmer', hint: 'Register a supplier', icon: UserPlus, to: '/farmers' },
+    { label: 'Record Payment', hint: 'Settle with a farmer', icon: CreditCard, to: '/payments' },
+  ]
+
+  // "Needs attention" is derived from the fields the dashboard API exposes.
+  const owed = data?.amountOwedToFarmers.filter((a) => a.amount > 0) ?? []
+  const noPaymentsToday = !!data && data.paymentsToday.length === 0
+  const attentionCount = owed.length + (noPaymentsToday ? 1 : 0)
+
   return (
     <div className="space-y-6">
       <div>
@@ -82,6 +106,32 @@ export function DashboardPage() {
           {error}
         </Alert>
       )}
+
+      {/* Quick actions — the tasks an operator lands here to do. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {quickActions.map((a) => (
+          <button
+            key={a.to}
+            type="button"
+            onClick={() => navigate(a.to)}
+            className="lift flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-start shadow-card cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <a.icon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">
+                {a.label}
+              </span>
+              <span className="block text-xs text-muted-foreground">{a.hint}</span>
+            </span>
+            <ChevronRight
+              className="ms-auto h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </button>
+        ))}
+      </div>
 
       {/* Summary cards — all values come from the backend, never hardcoded. */}
       <div className="rise-children grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -122,6 +172,85 @@ export function DashboardPage() {
           tone="neutral"
           caption="in stock"
         />
+      </div>
+
+      {/* Intake trend + triage */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <IntakeChart deliveries={data?.recentDeliveries ?? []} loading={loading} />
+        </div>
+
+        <Card flush>
+          <CardHeader
+            title="Needs Attention"
+            description="Items to review"
+            action={
+              attentionCount > 0 ? (
+                <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                  {attentionCount}
+                </span>
+              ) : undefined
+            }
+          />
+          <div className="p-5">
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : attentionCount === 0 ? (
+              <EmptyState
+                icon={CheckCircle2}
+                title="All caught up"
+                description="Nothing needs your attention right now."
+              />
+            ) : (
+              <ul className="space-y-3">
+                {owed.map((a) => (
+                  <li key={a.currency}>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/payments')}
+                      className="flex w-full items-center gap-3 rounded-md border border-warning/20 bg-warning-soft/50 p-3 text-start transition-colors hover:bg-warning-soft cursor-pointer"
+                    >
+                      <AlertTriangle
+                        className="h-5 w-5 shrink-0 text-warning"
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-foreground">
+                          Outstanding to farmers
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {formatMoney(a.amount, a.currency)} awaiting payment
+                        </span>
+                      </span>
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </li>
+                ))}
+                {noPaymentsToday && (
+                  <li>
+                    <div className="flex items-center gap-3 rounded-md border border-border bg-muted/50 p-3">
+                      <CreditCard
+                        className="h-5 w-5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-foreground">
+                          No payments recorded today
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          Record payments as you settle with farmers.
+                        </span>
+                      </span>
+                    </div>
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">

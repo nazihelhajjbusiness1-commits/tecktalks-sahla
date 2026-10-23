@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate, type Location } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Sprout } from 'lucide-react'
 import { Button, Input, Alert } from '@/components/common'
 import { Logo } from '@/components/layout/Logo'
 import { useAuth } from '@/hooks/useAuth'
@@ -40,9 +40,27 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      {/* Brand panel — the full Sahla logo filling the section; hidden on small screens */}
-      <aside className="hidden overflow-hidden bg-white p-10 lg:flex lg:items-center lg:justify-center xl:p-16">
-        <Logo full className="max-h-full w-full object-contain" />
+      {/* Brand panel — the full Sahla logo over the context copy; hidden on small screens */}
+      <aside className="hidden overflow-hidden bg-white p-10 lg:flex lg:flex-col lg:justify-center xl:p-16">
+        <Logo full className="w-full max-w-md" />
+        <div className="mt-10 max-w-md">
+          <h2 className="font-heading text-3xl font-semibold leading-tight text-foreground">
+            From delivery to payment, one place to run your collection center.
+          </h2>
+          <p className="mt-4 text-muted-foreground">{brand.description}</p>
+          <ul className="mt-8 space-y-3 text-sm text-foreground/80">
+            {[
+              'Track every farmer delivery and grade',
+              'Keep inventory and payments in sync',
+              'Built for cooperatives across Lebanon',
+            ].map((line) => (
+              <li key={line} className="flex items-center gap-2.5">
+                <Sprout className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
       </aside>
 
       {/* Form panel */}

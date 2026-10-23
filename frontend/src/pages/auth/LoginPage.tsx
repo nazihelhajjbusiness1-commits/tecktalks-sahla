@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate, type Location } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, Sprout } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { Button, Input, Alert } from '@/components/common'
 import { Logo } from '@/components/layout/Logo'
 import { useAuth } from '@/hooks/useAuth'
@@ -40,44 +40,9 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      {/* Brand / context panel — hidden on small screens */}
-      <aside className="relative hidden overflow-hidden bg-primary p-10 text-on-primary lg:flex lg:flex-col lg:justify-between">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          aria-hidden="true"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 30%, #fff 1px, transparent 1px), radial-gradient(circle at 70% 60%, #fff 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-        <div className="relative w-full rounded-2xl bg-white p-8 shadow-raised ring-1 ring-black/5">
-          <Logo full className="mx-auto h-auto w-full max-w-sm" />
-        </div>
-        <div className="relative max-w-md">
-          <h2 className="font-heading text-3xl font-semibold leading-tight">
-            From delivery to payment, one place to run your collection center.
-          </h2>
-          <p className="mt-4 text-on-primary/80">
-            {brand.description}
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-on-primary/85">
-            {[
-              'Track every farmer delivery and grade',
-              'Keep inventory and payments in sync',
-              'Built for cooperatives across Lebanon',
-            ].map((line) => (
-              <li key={line} className="flex items-center gap-2.5">
-                <Sprout className="h-4.5 w-4.5 text-on-primary/70" aria-hidden="true" />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <p className="relative text-xs text-on-primary/60">
-          © {new Date().getFullYear()} {brand.copyrightHolder}. Agricultural
-          cooperative management.
-        </p>
+      {/* Brand panel — the full Sahla logo filling the section; hidden on small screens */}
+      <aside className="hidden overflow-hidden bg-white p-10 lg:flex lg:items-center lg:justify-center xl:p-16">
+        <Logo full className="max-h-full w-full object-contain" />
       </aside>
 
       {/* Form panel */}

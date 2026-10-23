@@ -171,6 +171,12 @@ export function DeliveryDetailPage() {
                     Graded by {grade.gradedBy} · {formatDateTime(grade.gradedAt)}
                   </p>
                 )}
+                {grade.notes && (
+                  <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+                    <span className="font-medium">Inspection note:</span>{' '}
+                    {grade.notes}
+                  </p>
+                )}
               </div>
             ) : (
               <EmptyState icon={ClipboardCheck} title="Not graded yet" />

@@ -13,6 +13,7 @@ import { NewDeliveryWizard } from '@/pages/deliveries/NewDeliveryWizard'
 import { DeliveryDetailPage } from '@/pages/deliveries/DeliveryDetailPage'
 import { SettlementPage } from '@/pages/deliveries/SettlementPage'
 import { InventoryPage } from '@/pages/inventory/InventoryPage'
+import { QualityPage } from '@/pages/quality/QualityPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
@@ -33,6 +34,7 @@ function App() {
             <Route element={<AppLayout />}>
               <Route element={<RoleRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/quality" element={<QualityPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/farmers" element={<FarmersPage />} />
               <Route path="/farmers/:id" element={<FarmerDetailPage />} />

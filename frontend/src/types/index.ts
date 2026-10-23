@@ -292,6 +292,24 @@ export interface DeliveryWeightResponse {
 export interface CaptureGradeRequest {
   /** Grade code matching a product GradeDefinition, e.g. "GRADE_A". */
   grade: string
+  /** Optional inspector note / reason (max 500 chars). */
+  notes?: string
+}
+
+/** One row of the quality grade distribution. */
+export interface GradeCount {
+  gradeCode: string
+  gradeName: string
+  count: number
+}
+
+/** Mirrors the backend QualitySummaryResponse DTO (Inspector dashboard). */
+export interface QualitySummary {
+  totalGraded: number
+  rejectCount: number
+  /** Fraction 0..1 of graded deliveries marked REJECT. */
+  rejectRate: number
+  distribution: GradeCount[]
 }
 
 /** Mirrors the backend DeliveryGradeResponse DTO. */
@@ -303,6 +321,7 @@ export interface DeliveryGradeResponse {
   gradeName: string
   gradedBy: string | null
   gradedAt: string
+  notes: string | null
   resultingStatus: IntakeStatus
   totalPrice: number | null
   totalPriceCurrency: Currency | null

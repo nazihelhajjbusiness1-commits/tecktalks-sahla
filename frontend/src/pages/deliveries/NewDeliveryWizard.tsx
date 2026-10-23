@@ -91,6 +91,7 @@ export function NewDeliveryWizard() {
   const [gross, setGross] = useState('')
   const [tare, setTare] = useState('')
   const [gradeCode, setGradeCode] = useState('')
+  const [gradeNotes, setGradeNotes] = useState('')
 
   // Backend results (source of truth once created)
   const [delivery, setDelivery] = useState<DeliveryResponse | null>(null)
@@ -207,7 +208,10 @@ export function NewDeliveryWizard() {
     }
     setSubmitting(true)
     try {
-      const g = await deliveryService.captureGrade(deliveryId, { grade: gradeCode })
+      const g = await deliveryService.captureGrade(deliveryId, {
+        grade: gradeCode,
+        notes: gradeNotes.trim() || undefined,
+      })
       setGrade(g)
       // Grading advances the backend status — refresh our copy.
       setDelivery(await deliveryService.getById(deliveryId))
@@ -483,6 +487,27 @@ export function NewDeliveryWizard() {
                   </span>
                 </label>
               ))}
+
+              <div className="pt-2">
+                <label
+                  htmlFor="grade-notes"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Inspection notes{' '}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </label>
+                <textarea
+                  id="grade-notes"
+                  rows={2}
+                  maxLength={500}
+                  value={gradeNotes}
+                  onChange={(e) => setGradeNotes(e.target.value)}
+                  placeholder="e.g. minor bruising on ~10% of crates"
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                />
+              </div>
             </fieldset>
           )}
 

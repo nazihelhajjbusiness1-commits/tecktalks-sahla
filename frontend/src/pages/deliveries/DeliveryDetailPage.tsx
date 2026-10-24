@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -18,15 +19,22 @@ import {
   IntakeStatusBadge,
 } from '@/components/common'
 import { useAsync } from '@/hooks/useAsync'
+import { useAuth } from '@/hooks/useAuth'
 import { deliveryService } from '@/services/deliveryService'
 import { productService } from '@/services/productService'
 import { inventoryService } from '@/services/inventoryService'
 import { formatDate, formatDateTime, formatNumber } from '@/utils/format'
+import { WeighDeliveryModal } from './WeighDeliveryModal'
+import { GradeDeliveryModal } from './GradeDeliveryModal'
 
 export function DeliveryDetailPage() {
   const { id = '' } = useParams()
   const deliveryId = Number(id)
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [reloadKey, setReloadKey] = useState(0)
+  const [weighOpen, setWeighOpen] = useState(false)
+  const [gradeOpen, setGradeOpen] = useState(false)
 
   // One bundle so the screen survives a refresh and optional sections (weight,
   // grade, inventory, audit) degrade to empty states instead of fake data.
@@ -38,15 +46,20 @@ export function DeliveryDetailPage() {
       deliveryService.auditHistory(deliveryId).catch(() => []),
       productService.list({ size: 100 }).catch(() => null),
     ])
-    const productId = products?.content.find(
-      (p) => p.name === delivery.productName,
-    )?.id
+    const productId =
+      products?.content.find((p) => p.name === delivery.productName)?.id ?? null
     const balance =
       productId != null
         ? await inventoryService.balanceForProduct(productId).catch(() => null)
         : null
-    return { delivery, weight, grade, audit, balance }
-  }, [deliveryId])
+    return { delivery, weight, grade, audit, balance, productId }
+  }, [deliveryId, reloadKey])
+
+  const role = user?.role
+  const canWeigh = role === 'receiving' || role === 'manager' || role === 'admin'
+  const canGrade = role === 'inspector' || role === 'manager' || role === 'admin'
+  const canSettle = role === 'accountant' || role === 'manager' || role === 'admin'
+  const reload = () => setReloadKey((k) => k + 1)
 
   if (loading) {
     return (
@@ -71,7 +84,7 @@ export function DeliveryDetailPage() {
     )
   }
 
-  const { delivery, weight, grade, audit, balance } = data
+  const { delivery, weight, grade, audit, balance, productId } = data
 
   const facts = [
     { label: 'Farmer', value: `${delivery.farmerName} (${delivery.farmerCode})` },
@@ -105,7 +118,17 @@ export function DeliveryDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {delivery.status === 'CONFIRMED' && (
+          {delivery.status === 'PENDING' && canWeigh && (
+            <Button icon={Scale} onClick={() => setWeighOpen(true)}>
+              Record weight
+            </Button>
+          )}
+          {delivery.status === 'WEIGHED' && canGrade && (
+            <Button icon={ClipboardCheck} onClick={() => setGradeOpen(true)}>
+              Grade
+            </Button>
+          )}
+          {delivery.status === 'CONFIRMED' && canSettle && (
             <Button icon={Wallet} onClick={() => navigate(`/deliveries/${delivery.id}/settlement`)}>
               Settlement
             </Button>
@@ -149,7 +172,17 @@ export function DeliveryDetailPage() {
                 />
               </dl>
             ) : (
-              <EmptyState icon={Scale} title="Not weighed yet" />
+              <EmptyState
+                icon={Scale}
+                title="Not weighed yet"
+                action={
+                  delivery.status === 'PENDING' && canWeigh ? (
+                    <Button size="sm" icon={Scale} onClick={() => setWeighOpen(true)}>
+                      Record weight
+                    </Button>
+                  ) : undefined
+                }
+              />
             )}
           </div>
         </Card>
@@ -179,7 +212,21 @@ export function DeliveryDetailPage() {
                 )}
               </div>
             ) : (
-              <EmptyState icon={ClipboardCheck} title="Not graded yet" />
+              <EmptyState
+                icon={ClipboardCheck}
+                title="Not graded yet"
+                action={
+                  delivery.status === 'WEIGHED' && canGrade ? (
+                    <Button
+                      size="sm"
+                      icon={ClipboardCheck}
+                      onClick={() => setGradeOpen(true)}
+                    >
+                      Grade delivery
+                    </Button>
+                  ) : undefined
+                }
+              />
             )}
           </div>
         </Card>
@@ -247,6 +294,29 @@ export function DeliveryDetailPage() {
         <Alert variant="warning" title="Rejected delivery">
           This delivery was graded as rejected and did not add inventory.
         </Alert>
+      )}
+
+      {weighOpen && (
+        <WeighDeliveryModal
+          deliveryId={delivery.id}
+          onClose={() => setWeighOpen(false)}
+          onDone={() => {
+            setWeighOpen(false)
+            reload()
+          }}
+        />
+      )}
+
+      {gradeOpen && (
+        <GradeDeliveryModal
+          deliveryId={delivery.id}
+          productId={productId}
+          onClose={() => setGradeOpen(false)}
+          onDone={() => {
+            setGradeOpen(false)
+            reload()
+          }}
+        />
       )}
     </div>
   )

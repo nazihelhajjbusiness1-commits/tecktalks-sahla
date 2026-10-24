@@ -47,12 +47,27 @@ export function navItemsForRole(role: UserRole): NavItem[] {
 }
 
 /**
- * Landing route for a role after login: the first nav section they can use.
- * Receiving staff start on Farmers, inspectors on Deliveries, etc. Falls
- * back to the always-available profile page if a role has no sections.
+ * Preferred landing route per role — the screen that *is* their job — when it
+ * differs from the first sidebar item. Receiving staff work in Deliveries;
+ * warehouse staff in Inventory. Others fall back to their first nav section.
+ */
+const roleHomeOverrides: Partial<Record<UserRole, string>> = {
+  receiving: '/deliveries',
+  warehouse: '/inventory',
+}
+
+/**
+ * Landing route for a role after login. Uses the per-role override when set
+ * (and allowed), otherwise the first nav section they can use. Falls back to
+ * the always-available profile page if a role has no sections.
  */
 export function homePathForRole(role: UserRole): string {
-  return navItemsForRole(role)[0]?.to ?? '/profile'
+  const override = roleHomeOverrides[role]
+  const allowed = navItemsForRole(role)
+  if (override && allowed.some((item) => item.to === override)) {
+    return override
+  }
+  return allowed[0]?.to ?? '/profile'
 }
 
 /**

@@ -222,7 +222,7 @@ export function PriceFormModal({
             type="date"
             value={values.effectiveTo}
             onChange={(e) => setField('effectiveTo', e.target.value)}
-            hint="Optional — leave blank for open-ended."
+            hint="Optional. Leave blank for open-ended."
           />
         </div>
 

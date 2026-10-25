@@ -163,7 +163,7 @@ export function FarmerFormModal({
             label="Farmer Code"
             value={values.farmerCode}
             onChange={(e) => setField('farmerCode', e.target.value)}
-            hint="Optional — a readable code is generated if left blank."
+            hint="Optional. A readable code is generated if left blank."
             error={codeError}
             placeholder="e.g. F-00042"
             autoComplete="off"

@@ -193,7 +193,7 @@ export function SettlementPage() {
       </div>
 
       <PageHeader
-        title={`Settlement — Delivery #${deliveryId}`}
+        title={`Settlement for Delivery #${deliveryId}`}
         description={`${delivery.farmerName} · ${delivery.productName}`}
         actions={
           <Button variant="outline" icon={ArrowLeft} onClick={() => navigate(`/deliveries/${deliveryId}`)}>

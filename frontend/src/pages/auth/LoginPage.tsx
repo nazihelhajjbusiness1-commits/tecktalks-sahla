@@ -13,7 +13,7 @@ export function LoginPage() {
   const location = useLocation()
   const from = (location.state as { from?: Location } | null)?.from?.pathname
 
-  const [identifier, setIdentifier] = useState('rania.aoun@sahla.app')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -147,13 +147,6 @@ export function LoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
-
-          <p className="mt-6 rounded-md bg-muted px-3 py-2.5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Demo:</span> any email
-            + password signs in. Use{' '}
-            <span className="font-medium text-foreground">wrong@demo</span> to
-            preview the error state.
-          </p>
         </div>
       </main>
     </div>

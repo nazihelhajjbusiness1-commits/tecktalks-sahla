@@ -249,7 +249,7 @@ export function DeliveryDetailPage() {
         <Card flush>
           <CardHeader
             title="Inventory"
-            description="Current stock for this product, derived from movement records"
+            description="Current stock for this product"
           />
           <div className="p-5">
             {balance != null ? (
@@ -358,7 +358,7 @@ export function DeliveryDetailPage() {
                         {s.status === 'APPROVED' ? 'Approved' : 'Rejected'} by{' '}
                         {s.reviewedBy ?? 'manager'}
                         {s.reviewedAt ? ` · ${formatDateTime(s.reviewedAt)}` : ''}
-                        {s.reviewNotes ? ` — ${s.reviewNotes}` : ''}
+                        {s.reviewNotes ? `: ${s.reviewNotes}` : ''}
                       </p>
                     )}
                   </li>

@@ -74,8 +74,8 @@ export function RecordPaymentModal({
     <Modal
       open={open}
       onClose={() => (submitting ? undefined : onClose())}
-      title={`Record payment — ${farmerName}`}
-      description="Record a full or partial payment. The backend validates the balance."
+      title={`Record payment for ${farmerName}`}
+      description="Record a full or partial payment."
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={submitting}>

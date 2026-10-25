@@ -10,7 +10,7 @@ export const brand = {
   tagline: 'Agricultural Cooperative Management',
   /** One-line supporting description. */
   description:
-    'From delivery to payment — one place to run your produce collection center.',
+    'From delivery to payment, one place to run your produce collection center.',
   /** Two-letter monogram used in the logo mark placeholder. */
   monogram: 'S',
   supportEmail: 'support@sahla.app',

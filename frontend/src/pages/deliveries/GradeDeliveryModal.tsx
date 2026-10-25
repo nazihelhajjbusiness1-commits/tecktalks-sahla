@@ -73,7 +73,7 @@ export function GradeDeliveryModal({
       open
       onClose={() => (submitting ? undefined : onClose())}
       title="Grade delivery"
-      description="Assign a quality grade — the grade determines the price."
+      description="Assign a quality grade. The grade determines the price."
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={submitting}>

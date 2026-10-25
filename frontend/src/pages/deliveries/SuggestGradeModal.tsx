@@ -78,7 +78,7 @@ export function SuggestGradeModal({
       size="lg"
       onClose={() => (submitting ? undefined : onClose())}
       title="Suggest a different grade"
-      description="Propose a grade change for a manager to approve — this doesn't change the grade yet."
+      description="Propose a grade change for a manager to approve. This doesn't change the grade yet."
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={submitting}>
@@ -160,7 +160,7 @@ export function SuggestGradeModal({
             maxLength={1000}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. photos show bruising on ~20% of crates — should be Grade B, not A"
+            placeholder="e.g. photos show bruising on ~20% of crates, should be Grade B, not A"
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           />
         </div>

@@ -332,10 +332,10 @@ export function NewDeliveryWizard() {
                   setGradeCode('')
                 }}
                 options={activeProducts.map((p) => ({
-                  label: `${p.name}${p.variety ? ` — ${p.variety}` : ''} (${p.unit})`,
+                  label: `${p.name}${p.variety ? `, ${p.variety}` : ''} (${p.unit})`,
                   value: String(p.id),
                 }))}
-                hint={locked ? 'Locked — the draft delivery has been created.' : undefined}
+                hint={locked ? 'Locked. The draft delivery has been created.' : undefined}
               />
             )}
             <Input
@@ -418,7 +418,7 @@ export function NewDeliveryWizard() {
               </span>
               {!weight && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  The confirmed net weight is calculated and stored by the backend.
+                  The confirmed net weight is calculated once you save.
                 </p>
               )}
             </div>

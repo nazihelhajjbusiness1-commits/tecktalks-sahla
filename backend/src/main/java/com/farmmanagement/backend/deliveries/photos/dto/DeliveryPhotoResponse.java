@@ -14,6 +14,7 @@ public class DeliveryPhotoResponse {
     private String contentType;
     private long sizeBytes;
     private String originalFilename;
+    private String sourceUrl;
     private String uploadedBy;
     private LocalDateTime createdAt;
 
@@ -23,6 +24,7 @@ public class DeliveryPhotoResponse {
         response.contentType = meta.getContentType();
         response.sizeBytes = meta.getSizeBytes();
         response.originalFilename = meta.getOriginalFilename();
+        response.sourceUrl = meta.getSourceUrl();
         response.createdAt = meta.getCreatedAt();
         DeliveryPhotoMetadata.UploadedBy uploader = meta.getUploadedBy();
         if (uploader != null) {
@@ -49,6 +51,10 @@ public class DeliveryPhotoResponse {
 
     public String getOriginalFilename() {
         return originalFilename;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
     }
 
     public String getUploadedBy() {

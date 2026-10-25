@@ -65,6 +65,21 @@ DECLARE
     g_var    TEXT[]    := ARRAY['Lebanese Red','Local','Spunta','Valencia'];
     GN       CONSTANT INT := 8;              -- number of awaiting-grade deliveries
     gj       INT;                            -- product index for the grading queue
+    -- Real produce photos (public Unsplash CDN image URLs, loaded directly by
+    -- the browser) keyed by product name. Two per product.
+    ph_apple  TEXT[] := ARRAY[
+        'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=800&q=80',
+        'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=800&q=80'];
+    ph_tomato TEXT[] := ARRAY[
+        'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=800&q=80',
+        'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&q=80'];
+    ph_potato TEXT[] := ARRAY[
+        'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=800&q=80',
+        'https://images.unsplash.com/photo-1590165482129-1b8b27698780?w=800&q=80'];
+    ph_orange TEXT[] := ARRAY[
+        'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&q=80',
+        'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&q=80'];
+    v_photos  TEXT[];                        -- the two URLs for the current product
     rec      RECORD;
 BEGIN
     SELECT id INTO v_admin FROM users WHERE email = 'admin@sahla.lb';
@@ -130,17 +145,20 @@ BEGIN
                                       weighed_by_user_id, weighed_at, created_at, updated_at)
         VALUES (v_delivery, v_net + 15, 15, v_net, 'KG', v_admin, v_when, v_when, v_when);
 
-        -- Produce photos (external URLs the backend proxies): a couple of
-        -- pictures of this product so the delivery shows real imagery.
+        -- Produce photos (real Unsplash image URLs, loaded directly by the
+        -- browser): two pictures of this product so the delivery shows imagery.
+        v_photos := CASE p_prod[pj]
+                        WHEN 'Apple'  THEN ph_apple
+                        WHEN 'Tomato' THEN ph_tomato
+                        WHEN 'Potato' THEN ph_potato
+                        WHEN 'Orange' THEN ph_orange
+                        ELSE ph_apple
+                    END;
         INSERT INTO delivery_photos (delivery_id, content_type, size_bytes, original_filename,
                                      source_url, uploaded_by_user_id, created_at)
         VALUES
-            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-1.jpg',
-             'https://loremflickr.com/800/600/' || lower(p_prod[pj]) || '?lock=' || (i * 2 + 1),
-             v_admin, v_when),
-            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-2.jpg',
-             'https://loremflickr.com/800/600/' || lower(p_prod[pj]) || '?lock=' || (i * 2 + 2),
-             v_admin, v_when);
+            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-1.jpg', v_photos[1], v_admin, v_when),
+            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-2.jpg', v_photos[2], v_admin, v_when);
 
         INSERT INTO delivery_grades (delivery_id, grade_id, graded_by_user_id, graded_at, created_at, updated_at)
         VALUES (v_delivery, v_grade, v_admin, v_when, v_when, v_when);
@@ -224,15 +242,18 @@ BEGIN
                                       weighed_by_user_id, weighed_at, created_at, updated_at)
         VALUES (v_delivery, v_net + 15, 15, v_net, 'KG', v_admin, v_when, v_when, v_when);
 
+        v_photos := CASE g_prod[gj]
+                        WHEN 'Apple'  THEN ph_apple
+                        WHEN 'Tomato' THEN ph_tomato
+                        WHEN 'Potato' THEN ph_potato
+                        WHEN 'Orange' THEN ph_orange
+                        ELSE ph_apple
+                    END;
         INSERT INTO delivery_photos (delivery_id, content_type, size_bytes, original_filename,
                                      source_url, uploaded_by_user_id, created_at)
         VALUES
-            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-1.jpg',
-             'https://loremflickr.com/800/600/' || lower(g_prod[gj]) || '?lock=' || (100 + i * 2 + 1),
-             v_admin, v_when),
-            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-2.jpg',
-             'https://loremflickr.com/800/600/' || lower(g_prod[gj]) || '?lock=' || (100 + i * 2 + 2),
-             v_admin, v_when);
+            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-1.jpg', v_photos[1], v_admin, v_when),
+            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-2.jpg', v_photos[2], v_admin, v_when);
     END LOOP;
 
     SELECT COUNT(*) INTO v_delivery FROM deliveries WHERE notes = 'DEMO-SEED';

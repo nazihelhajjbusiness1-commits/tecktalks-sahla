@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { Camera, ImagePlus, Trash2 } from 'lucide-react'
+import { Camera, ImageOff, ImagePlus, Trash2 } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -13,8 +13,63 @@ import {
 import { useAsync } from '@/hooks/useAsync'
 import { deliveryService } from '@/services/deliveryService'
 import { ApiError } from '@/services/api'
+import { cn } from '@/utils/cn'
 import { formatDateTime } from '@/utils/format'
 import type { DeliveryPhotoResponse } from '@/types'
+
+/**
+ * Renders one photo. External photos (seeded, with a sourceUrl) load directly
+ * in the browser — public images need no auth and this avoids any backend
+ * round-trip. Uploaded photos (bytes in the DB) load through the authenticated
+ * serve endpoint via AuthImage.
+ */
+function PhotoImage({
+  deliveryId,
+  photo,
+  alt,
+  className,
+}: {
+  deliveryId: number
+  photo: DeliveryPhotoResponse
+  alt: string
+  className?: string
+}) {
+  const [failed, setFailed] = useState(false)
+
+  if (photo.sourceUrl) {
+    if (failed) {
+      return (
+        <div
+          className={cn(
+            'flex items-center justify-center bg-muted text-muted-foreground',
+            className,
+          )}
+        >
+          <ImageOff className="h-5 w-5" aria-hidden="true" />
+          <span className="sr-only">Image failed to load</span>
+        </div>
+      )
+    }
+    return (
+      <img
+        src={photo.sourceUrl}
+        alt={alt}
+        className={className}
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    )
+  }
+
+  return (
+    <AuthImage
+      loaderKey={photo.id}
+      loader={() => deliveryService.photoObjectUrl(deliveryId, photo.id)}
+      alt={alt}
+      className={className}
+    />
+  )
+}
 
 interface DeliveryPhotosProps {
   deliveryId: number
@@ -151,9 +206,9 @@ export function DeliveryPhotos({
                 className="group block overflow-hidden rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 title={photo.originalFilename ?? 'Produce photo'}
               >
-                <AuthImage
-                  loaderKey={photo.id}
-                  loader={() => deliveryService.photoObjectUrl(deliveryId, photo.id)}
+                <PhotoImage
+                  deliveryId={deliveryId}
+                  photo={photo}
                   alt={photo.originalFilename ?? `Produce photo ${photo.id}`}
                   className={
                     compact
@@ -198,9 +253,9 @@ export function DeliveryPhotos({
             </>
           }
         >
-          <AuthImage
-            loaderKey={active.id}
-            loader={() => deliveryService.photoObjectUrl(deliveryId, active.id)}
+          <PhotoImage
+            deliveryId={deliveryId}
+            photo={active}
             alt={active.originalFilename ?? `Produce photo ${active.id}`}
             className="max-h-[70vh] w-full rounded-md object-contain"
           />

@@ -345,6 +345,8 @@ export interface DeliveryPhotoResponse {
   contentType: string
   sizeBytes: number
   originalFilename: string | null
+  /** Set for external (e.g. seeded) photos loaded directly; null for uploads. */
+  sourceUrl: string | null
   uploadedBy: string | null
   createdAt: string
 }

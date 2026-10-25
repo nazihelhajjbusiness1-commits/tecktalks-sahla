@@ -27,6 +27,8 @@ public interface DeliveryPhotoRepository extends JpaRepository<DeliveryPhoto, Lo
 
         String getOriginalFilename();
 
+        String getSourceUrl();
+
         LocalDateTime getCreatedAt();
 
         UploadedBy getUploadedBy();

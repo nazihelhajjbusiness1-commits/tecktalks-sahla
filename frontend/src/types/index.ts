@@ -351,6 +351,32 @@ export interface DeliveryPhotoResponse {
   createdAt: string
 }
 
+export type GradeSuggestionStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+/** Mirrors the backend GradeSuggestionResponse DTO. */
+export interface GradeSuggestionResponse {
+  id: number
+  deliveryId: number
+  farmerName: string | null
+  productName: string | null
+  currentGradeCode: string | null
+  currentGradeName: string | null
+  suggestedGradeCode: string
+  suggestedGradeName: string
+  reason: string
+  status: GradeSuggestionStatus
+  suggestedBy: string | null
+  reviewedBy: string | null
+  reviewNotes: string | null
+  reviewedAt: string | null
+  createdAt: string
+}
+
+export interface CreateGradeSuggestionRequest {
+  suggestedGrade: string
+  reason: string
+}
+
 /** Mirrors the backend DeliveryAuditLogResponse DTO (DT-57). */
 export interface DeliveryAuditEntry {
   id: number

@@ -105,9 +105,14 @@ operator** above the business.
   note** (and later photos). (Needs a `notes` column on `delivery_grades`.)
 - **Quality view (quick win):** a QC screen — grade distribution, reject rate,
   quality trend — for the Inspector's own landing page.
-- **Later:** re-grade/override with reason (dispute resolution); reject/
-  quarantine/spoilage handling feeding inventory; ownership of grade definitions
-  & quality criteria; per-farmer quality scoring; produce **photos** (see below).
+- **Done:** re-grade/override with reason via a **grade-suggestion + manager
+  approval** flow — an inspector proposes a different grade (with a reason, from
+  the photos), it lands in the Manager's "Grade Reviews" tab, and approval
+  overrides the grade and recomputes the price (audited). Settled deliveries are
+  blocked from override (ties into the settlement-reversal gap); reject↔real-grade
+  transitions are deferred until inventory reversal exists.
+- **Later:** reject/quarantine/spoilage handling feeding inventory; ownership of
+  grade definitions & quality criteria; per-farmer quality scoring.
 
 ### Produce photos (inspection evidence) — **implemented (MVP)**
 Images are attached to a **delivery** (the actual produce that arrived) so the

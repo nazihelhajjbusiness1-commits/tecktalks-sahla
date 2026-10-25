@@ -8,6 +8,7 @@ import {
   History,
   Truck,
   Wallet,
+  Gavel,
 } from 'lucide-react'
 import {
   Card,
@@ -23,9 +24,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { deliveryService } from '@/services/deliveryService'
 import { productService } from '@/services/productService'
 import { inventoryService } from '@/services/inventoryService'
+import { gradeSuggestionService } from '@/services/gradeSuggestionService'
+import { can } from '@/utils/permissions'
 import { formatDate, formatDateTime, formatNumber } from '@/utils/format'
 import { WeighDeliveryModal } from './WeighDeliveryModal'
 import { GradeDeliveryModal } from './GradeDeliveryModal'
+import { SuggestGradeModal } from './SuggestGradeModal'
 import { DeliveryPhotos } from './DeliveryPhotos'
 
 export function DeliveryDetailPage() {
@@ -36,16 +40,18 @@ export function DeliveryDetailPage() {
   const [reloadKey, setReloadKey] = useState(0)
   const [weighOpen, setWeighOpen] = useState(false)
   const [gradeOpen, setGradeOpen] = useState(false)
+  const [suggestOpen, setSuggestOpen] = useState(false)
 
   // One bundle so the screen survives a refresh and optional sections (weight,
   // grade, inventory, audit) degrade to empty states instead of fake data.
   const { data, loading, error } = useAsync(async () => {
     const delivery = await deliveryService.getById(deliveryId)
-    const [weight, grade, audit, products] = await Promise.all([
+    const [weight, grade, audit, products, suggestions] = await Promise.all([
       deliveryService.getWeight(deliveryId).catch(() => null),
       deliveryService.getGrade(deliveryId).catch(() => null),
       deliveryService.auditHistory(deliveryId).catch(() => []),
       productService.list({ size: 100 }).catch(() => null),
+      gradeSuggestionService.listForDelivery(deliveryId).catch(() => []),
     ])
     const productId =
       products?.content.find((p) => p.name === delivery.productName)?.id ?? null
@@ -53,7 +59,7 @@ export function DeliveryDetailPage() {
       productId != null
         ? await inventoryService.balanceForProduct(productId).catch(() => null)
         : null
-    return { delivery, weight, grade, audit, balance, productId }
+    return { delivery, weight, grade, audit, balance, productId, suggestions }
   }, [deliveryId, reloadKey])
 
   const role = user?.role
@@ -87,7 +93,12 @@ export function DeliveryDetailPage() {
     )
   }
 
-  const { delivery, weight, grade, audit, balance, productId } = data
+  const { delivery, weight, grade, audit, balance, productId, suggestions } = data
+
+  // A second-opinion suggestion only makes sense once the delivery has a grade,
+  // and only one open suggestion is allowed at a time.
+  const hasPendingSuggestion = suggestions.some((s) => s.status === 'PENDING')
+  const canSuggest = can(role, 'grade.suggest') && grade != null && !hasPendingSuggestion
 
   const facts = [
     { label: 'Farmer', value: `${delivery.farmerName} (${delivery.farmerCode})` },
@@ -295,6 +306,69 @@ export function DeliveryDetailPage() {
 
       <DeliveryPhotos deliveryId={delivery.id} canUpload={canUploadPhotos} />
 
+      {/* Grade review: second-opinion suggestions + their approval status. */}
+      {(grade != null || suggestions.length > 0) && (
+        <Card flush>
+          <CardHeader
+            title="Grade review"
+            description="Second-opinion suggestions and manager decisions"
+            action={
+              canSuggest ? (
+                <Button size="sm" variant="outline" icon={Gavel} onClick={() => setSuggestOpen(true)}>
+                  Suggest different grade
+                </Button>
+              ) : undefined
+            }
+          />
+          <div className="p-5">
+            {suggestions.length === 0 ? (
+              <EmptyState
+                icon={Gavel}
+                title="No suggestions"
+                description={
+                  canSuggest
+                    ? 'Disagree with the grade? Propose a change for a manager to approve.'
+                    : hasPendingSuggestion
+                      ? 'A suggestion is awaiting manager review.'
+                      : 'Inspector grade suggestions will appear here.'
+                }
+              />
+            ) : (
+              <ul className="space-y-4">
+                {suggestions.map((s) => (
+                  <li key={s.id} className="rounded-md border border-border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {(s.currentGradeName ?? s.currentGradeCode ?? 'current')} →{' '}
+                        <span className="text-foreground">{s.suggestedGradeName}</span>{' '}
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {s.suggestedGradeCode}
+                        </span>
+                      </p>
+                      <SuggestionStatusBadge status={s.status} />
+                    </div>
+                    <p className="mt-1.5 rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+                      {s.reason}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Suggested by {s.suggestedBy ?? 'inspector'} · {formatDateTime(s.createdAt)}
+                    </p>
+                    {s.status !== 'PENDING' && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {s.status === 'APPROVED' ? 'Approved' : 'Rejected'} by{' '}
+                        {s.reviewedBy ?? 'manager'}
+                        {s.reviewedAt ? ` · ${formatDateTime(s.reviewedAt)}` : ''}
+                        {s.reviewNotes ? ` — ${s.reviewNotes}` : ''}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+      )}
+
       {delivery.status === 'REJECTED' && (
         <Alert variant="warning" title="Rejected delivery">
           This delivery was graded as rejected and did not add inventory.
@@ -323,7 +397,34 @@ export function DeliveryDetailPage() {
           }}
         />
       )}
+
+      {suggestOpen && (
+        <SuggestGradeModal
+          deliveryId={delivery.id}
+          productId={productId}
+          currentGradeCode={grade?.gradeCode ?? null}
+          onClose={() => setSuggestOpen(false)}
+          onDone={() => {
+            setSuggestOpen(false)
+            reload()
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+function SuggestionStatusBadge({ status }: { status: 'PENDING' | 'APPROVED' | 'REJECTED' }) {
+  const styles: Record<typeof status, string> = {
+    PENDING: 'bg-warning-soft text-foreground',
+    APPROVED: 'bg-success-soft text-foreground',
+    REJECTED: 'bg-danger-soft text-foreground',
+  }
+  const label = status.charAt(0) + status.slice(1).toLowerCase()
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
+      {label}
+    </span>
   )
 }
 

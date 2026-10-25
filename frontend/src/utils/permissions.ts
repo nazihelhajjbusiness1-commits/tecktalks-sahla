@@ -11,6 +11,8 @@ export type Action =
   | 'delivery.create'
   | 'delivery.weigh'
   | 'delivery.grade'
+  | 'grade.suggest'
+  | 'grade.review'
   | 'settlement.confirm'
   | 'payment.record'
   | 'pricing.manage'
@@ -24,6 +26,9 @@ const matrix: Record<Action, UserRole[]> = {
   'delivery.create': ['admin', 'manager', 'receiving'],
   'delivery.weigh': ['admin', 'manager', 'receiving'],
   'delivery.grade': ['admin', 'manager', 'inspector'],
+  // Inspectors propose re-grades; managers (and admins) review/approve them.
+  'grade.suggest': ['admin', 'manager', 'inspector'],
+  'grade.review': ['admin', 'manager'],
   'settlement.confirm': ['admin', 'manager', 'accountant'],
   'payment.record': ['admin', 'manager', 'accountant'],
   'pricing.manage': ['admin', 'manager'],

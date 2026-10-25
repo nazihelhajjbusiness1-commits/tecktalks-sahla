@@ -25,9 +25,12 @@
 --   * Inbound inventory per delivery plus DISPATCH / SPOILAGE / ADJUSTMENT
 --     movements (negative quantity) so on-hand stock reads like a real
 --     warehouse rather than pure intake.
---   * Produce photos on every delivery (external image URLs the backend
---     proxies), plus 8 WEIGHED "awaiting grading" deliveries with photos so
---     the Quality Inspector can grade batches from the pictures.
+--   * Produce photos on every delivery (external image URLs the browser loads),
+--     plus 8 WEIGHED "awaiting grading" deliveries with photos so the Quality
+--     Inspector can grade batches from the pictures.
+--   * 4 Apple deliveries graded A (unsettled) each with a PENDING inspector
+--     grade suggestion (A -> B), so the Manager's "Grade Reviews" approval tab
+--     has real items to approve/reject.
 --
 -- All values are clearly fictional demo data. No real customer information.
 -- =====================================================================
@@ -80,6 +83,18 @@ DECLARE
         'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&q=80',
         'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&q=80'];
     v_photos  TEXT[];                        -- the two URLs for the current product
+    -- Pending grade suggestions for the manager's approval tab. Apple only,
+    -- because only Apple has B/C price rules seeded (so approval can re-price).
+    v_inspector BIGINT;
+    v_apple     BIGINT;
+    v_apple_a   BIGINT;
+    v_apple_b   BIGINT;
+    SN       CONSTANT INT := 4;              -- number of pending suggestions to seed
+    sn_reason TEXT[] := ARRAY[
+        'Photos show surface bruising on roughly 20% of the crates — consistent with Grade B, not A.',
+        'Color is uneven across the batch and several apples are undersized; recommend Grade B.',
+        'Minor skin blemishes visible in the photos exceed the Grade A tolerance.',
+        'Several fruits show pressure marks in the photos; quality is closer to Grade B.'];
     rec      RECORD;
 BEGIN
     SELECT id INTO v_admin FROM users WHERE email = 'admin@sahla.lb';
@@ -98,6 +113,8 @@ BEGIN
     DELETE FROM farmer_settlements
      WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
     DELETE FROM delivery_grades
+     WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
+    DELETE FROM grade_suggestions
      WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
     DELETE FROM delivery_weights
      WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
@@ -256,6 +273,49 @@ BEGIN
             (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-2.jpg', v_photos[2], v_admin, v_when);
     END LOOP;
 
+    -- --- Pending grade suggestions (manager approval queue) --------------
+    -- Apple deliveries graded A but NOT settled, each with a PENDING inspector
+    -- suggestion to drop them to Grade B. They populate the Manager's "Grade
+    -- Reviews" tab and can be approved live (no settlement blocks the override).
+    SELECT id INTO v_inspector FROM users WHERE email = 'inspector@sahla.lb';
+    SELECT id INTO v_apple   FROM products WHERE name = 'Apple' AND variety = 'Lebanese Red';
+    SELECT id INTO v_apple_a FROM grade_definitions WHERE product_id = v_apple AND grade_code = 'GRADE_A';
+    SELECT id INTO v_apple_b FROM grade_definitions WHERE product_id = v_apple AND grade_code = 'GRADE_B';
+
+    IF v_inspector IS NOT NULL AND v_apple_b IS NOT NULL THEN
+        FOR i IN 0..(SN - 1) LOOP
+            v_fc    := 'F-' || LPAD((((i % 12) + 1))::text, 5, '0');
+            v_net   := 400 + ((i * 41) % 600);
+            v_when  := NOW() - ((i % 4) * INTERVAL '1 day');
+            SELECT id INTO v_farmer FROM farmers WHERE farmer_code = v_fc;
+            v_gross := ROUND(1.2000 * v_net, 4);   -- Apple Grade A price
+
+            INSERT INTO deliveries (farmer_id, product_id, quantity, unit, delivery_date, status,
+                                    created_by_user_id, notes, total_price, total_price_currency, created_at, updated_at)
+            VALUES (v_farmer, v_apple, v_net, 'KG', v_when::date, 'CONFIRMED',
+                    v_admin, 'DEMO-SEED', v_gross, 'USD', v_when, v_when)
+            RETURNING id INTO v_delivery;
+
+            INSERT INTO delivery_weights (delivery_id, gross_weight, tare_weight, net_weight, unit,
+                                          weighed_by_user_id, weighed_at, created_at, updated_at)
+            VALUES (v_delivery, v_net + 15, 15, v_net, 'KG', v_admin, v_when, v_when, v_when);
+
+            INSERT INTO delivery_grades (delivery_id, grade_id, graded_by_user_id, graded_at, created_at, updated_at)
+            VALUES (v_delivery, v_apple_a, v_admin, v_when, v_when, v_when);
+
+            INSERT INTO delivery_photos (delivery_id, content_type, size_bytes, original_filename,
+                                         source_url, uploaded_by_user_id, created_at)
+            VALUES
+                (v_delivery, 'image/jpeg', 0, 'apple-1.jpg', ph_apple[1], v_admin, v_when),
+                (v_delivery, 'image/jpeg', 0, 'apple-2.jpg', ph_apple[2], v_admin, v_when);
+
+            INSERT INTO grade_suggestions (delivery_id, current_grade_id, suggested_grade_id, reason,
+                                           status, suggested_by_user_id, created_at, updated_at)
+            VALUES (v_delivery, v_apple_a, v_apple_b, sn_reason[(i % 4) + 1],
+                    'PENDING', v_inspector, v_when, v_when);
+        END LOOP;
+    END IF;
+
     SELECT COUNT(*) INTO v_delivery FROM deliveries WHERE notes = 'DEMO-SEED';
-    RAISE NOTICE 'Enriched demo seed complete: % deliveries generated (incl. % awaiting grading with photos), plus settlements, payments and inventory movements.', v_delivery, GN;
+    RAISE NOTICE 'Enriched demo seed complete: % deliveries generated (incl. % awaiting grading, % pending grade suggestions), plus settlements, payments and inventory movements.', v_delivery, GN, SN;
 END $$;

@@ -14,6 +14,7 @@ import { DeliveryDetailPage } from '@/pages/deliveries/DeliveryDetailPage'
 import { SettlementPage } from '@/pages/deliveries/SettlementPage'
 import { InventoryPage } from '@/pages/inventory/InventoryPage'
 import { QualityPage } from '@/pages/quality/QualityPage'
+import { GradeReviewsPage } from '@/pages/quality/GradeReviewsPage'
 import { PaymentsPage } from '@/pages/payments/PaymentsPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
@@ -36,6 +37,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/users" element={<UsersSettingsPage />} />
               <Route path="/quality" element={<QualityPage />} />
+              <Route path="/grade-reviews" element={<GradeReviewsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/farmers" element={<FarmersPage />} />
               <Route path="/farmers/:id" element={<FarmerDetailPage />} />

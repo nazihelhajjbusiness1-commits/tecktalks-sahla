@@ -206,6 +206,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/deliveries/*/photos/*")
                         .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE", "INSPECTOR")
 
+                        // Grade suggestions: an inspector proposes a re-grade on a
+                        // delivery; a manager approves/rejects. GET per-delivery is
+                        // covered by the /api/deliveries/** read matcher above.
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/grade-suggestions")
+                        .hasAnyRole("ADMIN", "MANAGER", "INSPECTOR")
+
+                        .requestMatchers(HttpMethod.GET, "/api/grade-suggestions", "/api/grade-suggestions/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+
+                        .requestMatchers(HttpMethod.POST, "/api/grade-suggestions/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/settlement/preview")
                         .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
 

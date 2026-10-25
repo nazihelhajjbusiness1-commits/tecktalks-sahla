@@ -196,6 +196,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/grade")
                         .hasAnyRole("ADMIN", "MANAGER", "INSPECTOR")
 
+                        // Produce photos (inspection evidence): receiving attaches at
+                        // intake, the inspector adds evidence while grading. GET is
+                        // covered by the /api/deliveries/** read matcher above, so all
+                        // delivery-access roles (incl. INSPECTOR) can view the images.
+                        .requestMatchers(HttpMethod.POST, "/api/deliveries/*/photos")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE", "INSPECTOR")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/deliveries/*/photos/*")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE", "INSPECTOR")
+
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/settlement/preview")
                         .hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
 

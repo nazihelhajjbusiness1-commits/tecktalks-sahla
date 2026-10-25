@@ -72,6 +72,53 @@ export async function request<T>(
   return (await res.json()) as T
 }
 
+/**
+ * Upload multipart form data (e.g. a file) with the auth token attached.
+ * Unlike {@link request}, it does NOT set Content-Type — the browser adds the
+ * correct `multipart/form-data; boundary=…` header for the FormData body.
+ */
+export async function uploadForm<T>(path: string, form: FormData): Promise<T> {
+  const token = getToken()
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+
+  if (!res.ok) {
+    const raw = await res.text().catch(() => '')
+    let message = raw || res.statusText
+    if (raw) {
+      try {
+        const body = JSON.parse(raw) as { message?: string }
+        if (body?.message) message = body.message
+      } catch {
+        /* not JSON — keep raw text */
+      }
+    }
+    throw new ApiError(res.status, message || 'Upload failed')
+  }
+
+  if (res.status === 204) return undefined as T
+  return (await res.json()) as T
+}
+
+/**
+ * Fetch a binary resource (image, file) with the auth token attached and
+ * return it as a Blob. Used for assets that sit behind JWT auth and so can't
+ * be loaded with a plain `<img src>` (which can't send the Authorization header).
+ */
+export async function requestBlob(path: string): Promise<Blob> {
+  const token = getToken()
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    throw new ApiError(res.status, res.statusText || 'Request failed')
+  }
+  return res.blob()
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {

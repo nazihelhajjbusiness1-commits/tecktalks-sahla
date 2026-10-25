@@ -109,20 +109,34 @@ operator** above the business.
   quarantine/spoilage handling feeding inventory; ownership of grade definitions
   & quality criteria; per-farmer quality scoring; produce **photos** (see below).
 
-### Produce photos (inspection evidence)
-Attach images to a **delivery** (the actual produce that arrived) so the Inspector
-can inspect/grade from photos and keep an evidence trail behind the price.
-Recommended: **Supabase Storage** (already in the stack) with a private bucket +
-signed URLs; a `delivery_photos` table (`delivery_id`, object key/url, uploaded_by,
-created_at); validate type/size; upload from the grading step. ~1–2 days.
+### Produce photos (inspection evidence) — **implemented (MVP)**
+Images are attached to a **delivery** (the actual produce that arrived) so the
+Inspector can inspect/grade from photos and keep an evidence trail behind the
+price. Shipped:
+- `delivery_photos` table (`V23`) storing the bytes in Postgres (`bytea`) +
+  `content_type`, `size_bytes`, `original_filename`, `uploaded_by`, `created_at`.
+- Endpoints under `/api/deliveries/{id}/photos`: upload (multipart, type/size
+  validated, ≤8 MB), list metadata, serve bytes, delete. Upload is allowed for
+  receiving/inspector/manager/admin; **all delivery-access roles (incl. the
+  Inspector) can view**.
+- Frontend: a Photos card on the delivery detail page renders thumbnails inline
+  (click to enlarge), and a compact photo strip inside the grade modal so the
+  Inspector reviews the produce while grading. Images sit behind JWT auth, so the
+  SPA fetches them as authenticated blobs (`AuthImage`).
+
+**Scale path (deferred):** move the bytes out of Postgres to **Supabase Storage**
+(already in the stack) with a private bucket + signed URLs once image volume
+grows — the table already carries the metadata to point at object keys instead.
 
 ### Sequencing
 - **Done (demo quick wins):** Inspector grade note + Quality dashboard
-  (grade distribution + reject rate), the inspector's landing page. Admin
-  user-management actions are the remaining quick win.
+  (grade distribution + reject rate), the inspector's landing page, **produce
+  photos (view + upload, inline in the app)**. Admin user-management actions are
+  the remaining quick win.
 - **Roadmap:** impersonation, platform analytics, feedback/feature boards,
-  multi-tenancy/billing (Admin); photos, quarantine, per-farmer quality scoring
-  (Inspector); password-reset + unique per-customer credentials (commercialization).
+  multi-tenancy/billing (Admin); quarantine, per-farmer quality scoring, photos
+  on object storage at scale (Inspector); password-reset + unique per-customer
+  credentials (commercialization).
 
 ---
 

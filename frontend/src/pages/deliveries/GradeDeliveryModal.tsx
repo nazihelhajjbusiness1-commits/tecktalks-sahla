@@ -5,6 +5,7 @@ import { deliveryService } from '@/services/deliveryService'
 import { gradeService } from '@/services/gradeService'
 import { ApiError } from '@/services/api'
 import { cn } from '@/utils/cn'
+import { DeliveryPhotos } from './DeliveryPhotos'
 import type { GradeDefinition } from '@/types'
 
 interface GradeDeliveryModalProps {
@@ -90,6 +91,9 @@ export function GradeDeliveryModal({
             {error}
           </Alert>
         )}
+
+        {/* Inspection evidence: let the inspector review the produce photos while grading. */}
+        <DeliveryPhotos deliveryId={deliveryId} canUpload compact />
 
         {loading ? (
           <div className="flex justify-center py-6">

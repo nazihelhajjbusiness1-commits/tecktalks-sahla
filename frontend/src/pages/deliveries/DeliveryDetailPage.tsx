@@ -26,6 +26,7 @@ import { inventoryService } from '@/services/inventoryService'
 import { formatDate, formatDateTime, formatNumber } from '@/utils/format'
 import { WeighDeliveryModal } from './WeighDeliveryModal'
 import { GradeDeliveryModal } from './GradeDeliveryModal'
+import { DeliveryPhotos } from './DeliveryPhotos'
 
 export function DeliveryDetailPage() {
   const { id = '' } = useParams()
@@ -59,6 +60,8 @@ export function DeliveryDetailPage() {
   const canWeigh = role === 'receiving' || role === 'manager' || role === 'admin'
   const canGrade = role === 'inspector' || role === 'manager' || role === 'admin'
   const canSettle = role === 'accountant' || role === 'manager' || role === 'admin'
+  const canUploadPhotos =
+    role === 'receiving' || role === 'inspector' || role === 'manager' || role === 'admin'
   const reload = () => setReloadKey((k) => k + 1)
 
   if (loading) {
@@ -289,6 +292,8 @@ export function DeliveryDetailPage() {
           </div>
         </Card>
       </div>
+
+      <DeliveryPhotos deliveryId={delivery.id} canUpload={canUploadPhotos} />
 
       {delivery.status === 'REJECTED' && (
         <Alert variant="warning" title="Rejected delivery">

@@ -20,3 +20,10 @@ spring:
 
   flyway:
     enabled: true
+
+  servlet:
+    multipart:
+      # Delivery photos are stored inline; keep the limits aligned with
+      # DeliveryPhotoService.MAX_SIZE_BYTES (8 MB per image).
+      max-file-size: 8MB
+      max-request-size: 10MB

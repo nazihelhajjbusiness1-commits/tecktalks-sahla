@@ -20,6 +20,7 @@ export {
   GradeBadge,
 } from './StatusBadge'
 export { Modal } from './Modal'
+export { AuthImage } from './AuthImage'
 export { EmptyState } from './EmptyState'
 export { LoadingSpinner } from './LoadingSpinner'
 export { Alert } from './Alert'

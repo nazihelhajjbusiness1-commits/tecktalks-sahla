@@ -339,6 +339,16 @@ export interface DeliveryGradeResponse {
   updatedAt: string
 }
 
+/** Mirrors the backend DeliveryPhotoResponse DTO (metadata only; bytes fetched separately). */
+export interface DeliveryPhotoResponse {
+  id: number
+  contentType: string
+  sizeBytes: number
+  originalFilename: string | null
+  uploadedBy: string | null
+  createdAt: string
+}
+
 /** Mirrors the backend DeliveryAuditLogResponse DTO (DT-57). */
 export interface DeliveryAuditEntry {
   id: number

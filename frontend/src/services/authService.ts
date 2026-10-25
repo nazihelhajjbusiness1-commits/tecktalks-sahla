@@ -3,6 +3,9 @@ import { currentUser } from './mockData'
 import { brand } from '@/config/brand'
 import { USE_MOCKS, mockDelay, request, setToken } from './api'
 
+// Per-tab session: stored in sessionStorage (not localStorage) so each tab can
+// be logged in as a different role at the same time, and a refresh keeps that
+// tab on its own role. See the note in api.ts (getToken/setToken).
 const SESSION_KEY = 'sahla.user'
 const REFRESH_KEY = 'sahla.refresh'
 
@@ -68,7 +71,7 @@ export const authService = {
       }
       await mockDelay(session, 700)
       setToken(session.token)
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session.user))
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session.user))
       return session
     }
 
@@ -82,12 +85,12 @@ export const authService = {
     const token = loginRes.data.token
     setToken(token)
     if (loginRes.data.refreshToken) {
-      localStorage.setItem(REFRESH_KEY, loginRes.data.refreshToken)
+      sessionStorage.setItem(REFRESH_KEY, loginRes.data.refreshToken)
     }
 
     const meRes = await request<ApiEnvelope<BackendUser>>('/auth/me')
     const user = mapUser(meRes.data)
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user))
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))
     return { user, token }
   },
 
@@ -98,13 +101,13 @@ export const authService = {
       void request('/auth/logout', { method: 'POST' }).catch(() => {})
     }
     setToken(null)
-    localStorage.removeItem(SESSION_KEY)
-    localStorage.removeItem(REFRESH_KEY)
+    sessionStorage.removeItem(SESSION_KEY)
+    sessionStorage.removeItem(REFRESH_KEY)
   },
 
   /** Restore the persisted user on app load (mock or real token flow). */
   getStoredUser(): User | null {
-    const raw = localStorage.getItem(SESSION_KEY)
+    const raw = sessionStorage.getItem(SESSION_KEY)
     if (!raw) return null
     try {
       return JSON.parse(raw) as User

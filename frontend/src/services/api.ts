@@ -18,13 +18,17 @@ export const USE_MOCKS =
 
 const TOKEN_KEY = 'sahla.token'
 
+// Auth lives in sessionStorage, not localStorage, so each browser tab keeps its
+// own independent session. That lets you sign in as a different role per tab
+// (and a refresh keeps that tab on its own role). Trade-off: closing the tab
+// ends the session — it does not persist across a browser restart.
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
 export function setToken(token: string | null): void {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  else localStorage.removeItem(TOKEN_KEY)
+  if (token) sessionStorage.setItem(TOKEN_KEY, token)
+  else sessionStorage.removeItem(TOKEN_KEY)
 }
 
 export interface RequestOptions extends RequestInit {

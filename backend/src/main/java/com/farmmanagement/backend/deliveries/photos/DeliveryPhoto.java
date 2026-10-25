@@ -33,9 +33,14 @@ public class DeliveryPhoto {
     @Column(name = "original_filename", length = 255)
     private String originalFilename;
 
+    /** Inline bytes for a user upload. Null when the photo is an external URL. */
     @Basic(fetch = FetchType.LAZY)
-    @Column(name = "data", nullable = false)
+    @Column(name = "data")
     private byte[] data;
+
+    /** External image URL (e.g. seeded demo photos) the backend proxies. Null for uploads. */
+    @Column(name = "source_url", columnDefinition = "TEXT")
+    private String sourceUrl;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "uploaded_by_user_id", nullable = false)
@@ -91,6 +96,14 @@ public class DeliveryPhoto {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
     }
 
     public User getUploadedBy() {

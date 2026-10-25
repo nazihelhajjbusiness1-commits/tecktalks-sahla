@@ -63,18 +63,12 @@ public class DeliveryPhotoController {
             @PathVariable Long deliveryId,
             @PathVariable Long photoId
     ) {
-        DeliveryPhoto photo = deliveryPhotoService.getRaw(deliveryId, photoId);
+        DeliveryPhotoService.PhotoBytes photo = deliveryPhotoService.loadBytes(deliveryId, photoId);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(photo.getContentType()))
+                .contentType(MediaType.parseMediaType(photo.contentType()))
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.inline()
-                                .filename(photo.getOriginalFilename() == null ? "photo" : photo.getOriginalFilename())
-                                .build()
-                                .toString()
-                )
-                .body(photo.getData());
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline().build().toString())
+                .body(photo.data());
     }
 
     @DeleteMapping("/{photoId}")

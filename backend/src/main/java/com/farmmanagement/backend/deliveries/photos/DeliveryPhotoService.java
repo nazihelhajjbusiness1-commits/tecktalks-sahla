@@ -12,6 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +34,15 @@ public class DeliveryPhotoService {
             "image/webp",
             "image/gif"
     );
+
+    private static final HttpClient HTTP = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    /** Bytes of a photo plus the content type to serve it with. */
+    public record PhotoBytes(byte[] data, String contentType) {
+    }
 
     private final DeliveryPhotoRepository deliveryPhotoRepository;
     private final DeliveryRepository deliveryRepository;
@@ -98,10 +112,46 @@ public class DeliveryPhotoService {
                 .toList();
     }
 
-    /** Full row (bytes + content type) for streaming a single photo. */
-    public DeliveryPhoto getRaw(Long deliveryId, Long photoId) {
-        return deliveryPhotoRepository.findByIdAndDeliveryId(photoId, deliveryId)
+    /**
+     * Bytes + content type for streaming a single photo. Inline uploads return
+     * their stored bytes directly; external (seeded) photos are fetched from
+     * their {@code source_url} server-side so they stay behind the same auth and
+     * avoid browser cross-origin limits.
+     */
+    public PhotoBytes loadBytes(Long deliveryId, Long photoId) {
+        DeliveryPhoto photo = deliveryPhotoRepository.findByIdAndDeliveryId(photoId, deliveryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Photo not found"));
+
+        if (photo.getData() != null) {
+            return new PhotoBytes(photo.getData(), photo.getContentType());
+        }
+        return fetchExternal(photo);
+    }
+
+    private PhotoBytes fetchExternal(DeliveryPhoto photo) {
+        String url = photo.getSourceUrl();
+        if (url == null || !(url.startsWith("http://") || url.startsWith("https://"))) {
+            throw new ResourceNotFoundException("Photo has no retrievable image");
+        }
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .GET()
+                    .build();
+            HttpResponse<byte[]> response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() / 100 != 2 || response.body() == null || response.body().length == 0) {
+                throw new ResourceNotFoundException("Could not retrieve the photo from its source");
+            }
+            String contentType = response.headers().firstValue("content-type")
+                    .filter(ct -> ct.startsWith("image/"))
+                    .orElse(photo.getContentType());
+            return new PhotoBytes(response.body(), contentType);
+        } catch (IOException e) {
+            throw new ResourceNotFoundException("Could not retrieve the photo from its source");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ResourceNotFoundException("Could not retrieve the photo from its source");
+        }
     }
 
     @Transactional

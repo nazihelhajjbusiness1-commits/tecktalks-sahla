@@ -25,6 +25,9 @@
 --   * Inbound inventory per delivery plus DISPATCH / SPOILAGE / ADJUSTMENT
 --     movements (negative quantity) so on-hand stock reads like a real
 --     warehouse rather than pure intake.
+--   * Produce photos on every delivery (external image URLs the backend
+--     proxies), plus 8 WEIGHED "awaiting grading" deliveries with photos so
+--     the Quality Inspector can grade batches from the pictures.
 --
 -- All values are clearly fictional demo data. No real customer information.
 -- =====================================================================
@@ -56,6 +59,12 @@ DECLARE
     p_price  NUMERIC[] := ARRAY[1.2000,0.8000,0.4000,0.9000,0.5000,90000.0000];
     p_cur    TEXT[]    := ARRAY['USD','USD','USD','USD','USD','LBP'];
     methods  TEXT[]    := ARRAY['CASH','BANK_TRANSFER','CHECK'];
+    -- Products used for the "awaiting grading" queue (one WEIGHED delivery each,
+    -- with photos, so the Inspector can grade from the pictures).
+    g_prod   TEXT[]    := ARRAY['Apple','Tomato','Potato','Orange'];
+    g_var    TEXT[]    := ARRAY['Lebanese Red','Local','Spunta','Valencia'];
+    GN       CONSTANT INT := 8;              -- number of awaiting-grade deliveries
+    gj       INT;                            -- product index for the grading queue
     rec      RECORD;
 BEGIN
     SELECT id INTO v_admin FROM users WHERE email = 'admin@sahla.lb';
@@ -76,6 +85,8 @@ BEGIN
     DELETE FROM delivery_grades
      WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
     DELETE FROM delivery_weights
+     WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
+    DELETE FROM delivery_photos
      WHERE delivery_id IN (SELECT id FROM deliveries WHERE notes = 'DEMO-SEED');
     DELETE FROM deliveries WHERE notes = 'DEMO-SEED';
 
@@ -118,6 +129,18 @@ BEGIN
         INSERT INTO delivery_weights (delivery_id, gross_weight, tare_weight, net_weight, unit,
                                       weighed_by_user_id, weighed_at, created_at, updated_at)
         VALUES (v_delivery, v_net + 15, 15, v_net, 'KG', v_admin, v_when, v_when, v_when);
+
+        -- Produce photos (external URLs the backend proxies): a couple of
+        -- pictures of this product so the delivery shows real imagery.
+        INSERT INTO delivery_photos (delivery_id, content_type, size_bytes, original_filename,
+                                     source_url, uploaded_by_user_id, created_at)
+        VALUES
+            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-1.jpg',
+             'https://loremflickr.com/800/600/' || lower(p_prod[pj]) || '?lock=' || (i * 2 + 1),
+             v_admin, v_when),
+            (v_delivery, 'image/jpeg', 0, lower(p_prod[pj]) || '-2.jpg',
+             'https://loremflickr.com/800/600/' || lower(p_prod[pj]) || '?lock=' || (i * 2 + 2),
+             v_admin, v_when);
 
         INSERT INTO delivery_grades (delivery_id, grade_id, graded_by_user_id, graded_at, created_at, updated_at)
         VALUES (v_delivery, v_grade, v_admin, v_when, v_when, v_when);
@@ -176,6 +199,42 @@ BEGIN
          ) AS m(prod, variety, mtype, qty, ref, days_ago)
     JOIN products p ON p.name = m.prod AND p.variety = m.variety;
 
+    -- --- Awaiting-grading queue -----------------------------------------
+    -- A handful of WEIGHED (not yet graded) deliveries, each with produce
+    -- photos, so the Quality Inspector has real batches to grade from the
+    -- pictures. No grade/settlement/inventory yet -- grading them drives the
+    -- rest of the flow live during a demo.
+    FOR i IN 0..(GN - 1) LOOP
+        gj      := (i % 4) + 1;
+        v_fc    := 'F-' || LPAD((((i % 12) + 1))::text, 5, '0');
+        v_net   := 250 + ((i * 37) % 500);         -- 250..749 kg
+        v_days  := i % 3;                           -- last few days
+        v_when  := NOW() - (v_days * INTERVAL '1 day');
+
+        SELECT id INTO v_product FROM products WHERE name = g_prod[gj] AND variety = g_var[gj];
+        SELECT id INTO v_farmer  FROM farmers  WHERE farmer_code = v_fc;
+
+        INSERT INTO deliveries (farmer_id, product_id, quantity, unit, delivery_date, status,
+                                created_by_user_id, notes, created_at, updated_at)
+        VALUES (v_farmer, v_product, v_net, 'KG', v_when::date, 'WEIGHED',
+                v_admin, 'DEMO-SEED', v_when, v_when)
+        RETURNING id INTO v_delivery;
+
+        INSERT INTO delivery_weights (delivery_id, gross_weight, tare_weight, net_weight, unit,
+                                      weighed_by_user_id, weighed_at, created_at, updated_at)
+        VALUES (v_delivery, v_net + 15, 15, v_net, 'KG', v_admin, v_when, v_when, v_when);
+
+        INSERT INTO delivery_photos (delivery_id, content_type, size_bytes, original_filename,
+                                     source_url, uploaded_by_user_id, created_at)
+        VALUES
+            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-1.jpg',
+             'https://loremflickr.com/800/600/' || lower(g_prod[gj]) || '?lock=' || (100 + i * 2 + 1),
+             v_admin, v_when),
+            (v_delivery, 'image/jpeg', 0, lower(g_prod[gj]) || '-2.jpg',
+             'https://loremflickr.com/800/600/' || lower(g_prod[gj]) || '?lock=' || (100 + i * 2 + 2),
+             v_admin, v_when);
+    END LOOP;
+
     SELECT COUNT(*) INTO v_delivery FROM deliveries WHERE notes = 'DEMO-SEED';
-    RAISE NOTICE 'Enriched demo seed complete: % deliveries generated, plus settlements, payments and inventory movements.', v_delivery;
+    RAISE NOTICE 'Enriched demo seed complete: % deliveries generated (incl. % awaiting grading with photos), plus settlements, payments and inventory movements.', v_delivery, GN;
 END $$;

@@ -25,7 +25,9 @@ const matrix: Record<Action, UserRole[]> = {
   'farmer.edit': ['admin', 'manager'],
   'delivery.create': ['admin', 'manager', 'receiving'],
   'delivery.weigh': ['admin', 'manager', 'receiving'],
-  'delivery.grade': ['admin', 'manager', 'inspector'],
+  // Receiving captures the farmer-stated grade at intake; the inspector can
+  // later propose a re-grade via grade.suggest (manager approves).
+  'delivery.grade': ['admin', 'manager', 'receiving', 'inspector'],
   // Inspectors propose re-grades; managers (and admins) review/approve them.
   'grade.suggest': ['admin', 'manager', 'inspector'],
   'grade.review': ['admin', 'manager'],

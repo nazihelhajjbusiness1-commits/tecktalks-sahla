@@ -64,7 +64,8 @@ export function DeliveryDetailPage() {
 
   const role = user?.role
   const canWeigh = role === 'receiving' || role === 'manager' || role === 'admin'
-  const canGrade = role === 'inspector' || role === 'manager' || role === 'admin'
+  const canGrade =
+    role === 'receiving' || role === 'inspector' || role === 'manager' || role === 'admin'
   const canSettle = role === 'accountant' || role === 'manager' || role === 'admin'
   const canUploadPhotos =
     role === 'receiving' || role === 'inspector' || role === 'manager' || role === 'admin'

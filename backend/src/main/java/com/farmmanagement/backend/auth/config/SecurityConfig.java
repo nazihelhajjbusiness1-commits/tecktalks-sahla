@@ -193,8 +193,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/weight")
                         .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE")
 
+                        // Receiving captures the farmer-stated grade at intake; the
+                        // inspector later re-grades via the suggestion/approval flow.
                         .requestMatchers(HttpMethod.POST, "/api/deliveries/*/grade")
-                        .hasAnyRole("ADMIN", "MANAGER", "INSPECTOR")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEIVING_EMPLOYEE", "INSPECTOR")
 
                         // Produce photos (inspection evidence): receiving attaches at
                         // intake, the inspector adds evidence while grading. GET is

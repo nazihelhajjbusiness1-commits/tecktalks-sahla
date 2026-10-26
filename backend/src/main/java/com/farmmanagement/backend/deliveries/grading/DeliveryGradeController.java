@@ -28,7 +28,7 @@ public class DeliveryGradeController {
     }
 
     @PostMapping("/{deliveryId}/grade")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'INSPECTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEIVING_EMPLOYEE', 'INSPECTOR')")
     public ResponseEntity<DeliveryGradeResponse> gradeDelivery(
             @PathVariable Long deliveryId,
             @Valid @RequestBody CaptureGradeRequest request,
